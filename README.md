@@ -1,4 +1,10 @@
-[![Travis CI Build Status](https://travis-ci.org/devmiyax/yabause.svg?branch=extui)](https://travis-ci.org/devmiyax/yabause)
-[![Appveyor Build status](https://ci.appveyor.com/api/projects/status/27foxtv7thxgvu5k/branch/extui?svg=true)](https://ci.appveyor.com/project/devmiyax/yabause)
-[![Discord](https://img.shields.io/discord/559158456515559424.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/aRJhTBH)
+# ios_saturn
 
+Complete corresponding source for the Sega Saturn core of **Pocket Arcade**
+(iOS): the Yaba Sanshiro 1.20.37 emulator source snapshot plus Pocket Arcade's
+C bridge, CMake project, libchdr, Swift adapter and reproducible build recipe.
+
+See `POCKET_ARCADE_SOURCE.md` for what is included, how to build
+`SaturnCore.xcframework`, and licensing (GPL-2.0-or-later). The original
+Yaba Sanshiro README is `yabause/README`; the project's own source archive
+is published at https://www.yabasanshiro.com/download.
