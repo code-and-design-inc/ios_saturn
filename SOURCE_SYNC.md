@@ -4,6 +4,7 @@
 | --- | --- |
 | `../emu/Native/SaturnCore/upstream/yabasanshiro-1.20.37` (extracted archive) | This source root (`yabause/`, `mini18n/`, …) |
 | `../emu/Native/SaturnCore/upstream/libchdr` (git clone @ pinned commit) | `libchdr/` (vendored, no `.git`) |
+| `../emu/Native/SaturnCore/Patches` | `Patches` (and applied to `yabause/src`) |
 | `../emu/Native/SaturnCore/PocketSaturn` | `PocketSaturn` |
 | `../emu/Native/SaturnCore/Support` | `Support` |
 | `../emu/Native/SaturnCore/build-ios.sh` | `build-pocket-arcade-ios.sh` (source-root aware; no download step) |

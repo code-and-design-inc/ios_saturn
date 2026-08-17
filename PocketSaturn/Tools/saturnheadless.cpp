@@ -9,6 +9,13 @@
 
 #include "PASaturnBridge.h"
 
+// Register peek for --regs (debug aid; links against the static core).
+extern "C" {
+#include "core.h"
+#include "vdp1.h"
+#include "vdp2.h"
+}
+
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
@@ -59,10 +66,12 @@ int main(int argc, char** argv)
     const char* out = argc > 4 && argv[4][0] != '-' ? argv[4] : nullptr;
     bool testState = false, pressStart = false;
     int dumpEvery = 0;
+    bool dumpRegs = false;
     for (int i = 3; i < argc; ++i) {
         if (!strcmp(argv[i], "--state")) testState = true;
         if (!strcmp(argv[i], "--press-start")) pressStart = true;
         if (!strncmp(argv[i], "--dump-every=", 13)) dumpEvery = atoi(argv[i] + 13);
+        if (!strcmp(argv[i], "--regs")) dumpRegs = true;
     }
 
     std::string backup = std::string(out ? out : "saturnheadless") + ".bup";
@@ -97,6 +106,11 @@ int main(int argc, char** argv)
             if (r > 0.01 && firstNonBlack < 0) {
                 firstNonBlack = i;
                 printf("first non-black frame at %d (%dx%d, %.1f%% lit)\n", i, frame.width, frame.height, r * 100.0);
+            }
+            if (dumpRegs && dumpEvery > 0 && i % dumpEvery == 0) {
+                printf("f%05d VDP1 TVMR=%04X FBCR=%04X PTMR=%04X EDSR=%04X status=%d | VDP2 TVMD=%04X BGON=%04X PRISA=%04X SPCTL=%04X\n",
+                       i, Vdp1Regs->TVMR, Vdp1Regs->FBCR, Vdp1Regs->PTMR, Vdp1Regs->EDSR, Vdp1External.status,
+                       Vdp2Regs->TVMD, Vdp2Regs->BGON, Vdp2Regs->PRISA, Vdp2Regs->SPCTL);
             }
             if (out && dumpEvery > 0 && i % dumpEvery == 0) {
                 char path[1024];

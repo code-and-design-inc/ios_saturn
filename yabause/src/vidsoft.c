@@ -91,8 +91,8 @@ void VIDSoftVdp1SystemClipping(u8 * ram, Vdp1 * regs);
 void VIDSoftVdp1LocalCoordinate(u8 * ram, Vdp1 * regs);
 void VIDSoftVdp1ReadFrameBuffer(u32 type, u32 addr, void * out);
 void VIDSoftVdp1WriteFrameBuffer(u32 type, u32 addr, u32 val);
-void VIDSoftVdp1EraseWrite(){};
-void VIDSoftVdp1FrameChange(){};
+void VIDSoftVdp1EraseWrite(void);
+void VIDSoftVdp1FrameChange(void);
 int VIDSoftVdp2Reset(void);
 void VIDSoftVdp2DrawStart(void);
 void VIDSoftVdp2DrawEnd(void);
@@ -2388,7 +2388,7 @@ int VIDSoftVdp1Reset(void)
 
 //////////////////////////////////////////////////////////////////////////////
 
-void VIDSoftVdp1DrawStartBody(Vdp1* regs, u8 * back_framebuffer)
+static void VidsoftUpdateVdp1Geometry(Vdp1* regs)
 {
    if (regs->FBCR & 8)
       vdp1interlace = 2;
@@ -2418,8 +2418,17 @@ void VIDSoftVdp1DrawStartBody(Vdp1* regs, u8 * back_framebuffer)
       vdp1height = 256;
       vdp1pixelsize = 2;
    }
+}
 
-   VIDSoftVdp1EraseFrameBuffer(regs, back_framebuffer);
+void VIDSoftVdp1DrawStartBody(Vdp1* regs, u8 * back_framebuffer)
+{
+   VidsoftUpdateVdp1Geometry(regs);
+
+   // Erase-write is applied by VIDSoftVdp1EraseWrite() (1-cycle mode, VBE and
+   // manual erase all go through it), so the drawing buffer is no longer
+   // cleared here: several plot triggers within one field accumulate, as on
+   // hardware.
+   (void)back_framebuffer;
 
    //night warriors doesn't set clipping most frames and uses
    //the last part of the vdp1 framebuffer as scratch ram
@@ -3516,6 +3525,11 @@ int VIDSoftVdp2Reset(void)
 
 void VIDSoftVdp2DrawStart(void)
 {
+   if (Vdp1External.manualerase && !Vdp1External.manualchange)
+   {
+      VIDSoftVdp1EraseWrite();
+      Vdp1External.manualerase = 0;
+   }
    int titanblendmode = TITAN_BLEND_TOP;
    if (Vdp2Regs->CCCTL & 0x100) titanblendmode = TITAN_BLEND_ADD;
    else if (Vdp2Regs->CCCTL & 0x200) titanblendmode = TITAN_BLEND_BOTTOM;
@@ -4115,31 +4129,49 @@ void VIDSoftVdp2SetResolution(u16 TVMD)
 
 //////////////////////////////////////////////////////////////////////////////
 
+static void VidsoftEraseBuffer(Vdp1* regs, u8 * framebuffer);
+
+// Frame change and erase-write are driven by vdp2Vdp1FrameOps() through
+// VIDCore->Vdp1FrameChange / VIDCore->Vdp1EraseWrite (1-cycle mode, VBE and
+// manual erase-then-change), the same way the OpenGL core is driven: the
+// change swaps the buffers immediately, before the VDP2 layers are composited,
+// and erase-write clears the *display* buffer (VDP1 manual 4.2), which the
+// following change turns into the clean drawing buffer.
+void VIDSoftVdp1FrameChange(void)
+{
+   u8 *temp;
+   if (vidsoft_vdp1_thread_enabled)
+   {
+      VidsoftWaitForVdp1Thread();
+   }
+   temp = vdp1frontframebuffer;
+   vdp1frontframebuffer = vdp1backframebuffer;
+   vdp1backframebuffer = temp;
+}
+
+void VIDSoftVdp1EraseWrite(void)
+{
+   if (vidsoft_vdp1_thread_enabled)
+   {
+      VidsoftWaitForVdp1Thread();
+   }
+   VidsoftUpdateVdp1Geometry(Vdp1Regs);
+   VidsoftEraseBuffer(Vdp1Regs, vdp1frontframebuffer);
+}
+
+// The swap used to happen here, after the sprite layer was composited; it now
+// happens in VIDSoftVdp1FrameChange().
 void VIDSoftVdp1SwapFrameBuffer(void)
 {
-   if (((Vdp1Regs->FBCR & 2) == 0) || Vdp1External.manualchange)
-   {
-		u8 *temp;
-      if (vidsoft_vdp1_thread_enabled)
-      {
-         VidsoftWaitForVdp1Thread();
-      }
-
-      temp = vdp1frontframebuffer;
-      vdp1frontframebuffer = vdp1backframebuffer;
-      vdp1backframebuffer = temp;
-      Vdp1External.manualchange = 0;
-   }
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
-void VIDSoftVdp1EraseFrameBuffer(Vdp1* regs, u8 * back_framebuffer)
-{   
+static void VidsoftEraseBuffer(Vdp1* regs, u8 * back_framebuffer)
+{
    int i,i2;
    int w,h;
 
-   if (((regs->FBCR & 2) == 0) || Vdp1External.manualerase)
    {
       h = (regs->EWRR & 0x1FF) + 1;
       if (h > vdp1height) h = vdp1height;
@@ -4170,6 +4202,14 @@ void VIDSoftVdp1EraseFrameBuffer(Vdp1* regs, u8 * back_framebuffer)
             }
          }
       }
+   }
+}
+
+void VIDSoftVdp1EraseFrameBuffer(Vdp1* regs, u8 * back_framebuffer)
+{
+   if (((regs->FBCR & 2) == 0) || Vdp1External.manualerase)
+   {
+      VidsoftEraseBuffer(regs, back_framebuffer);
       Vdp1External.manualerase = 0;
    }
 }

@@ -8,7 +8,10 @@ https://www.yabasanshiro.com/download). The repository's first commit is an
 exact snapshot of that archive minus prebuilt third-party binary libraries
 that are not part of this build (`yabause/src/vulkan/lib`, `yabause/src/qt/lib`,
 `yabause/src/glfw/lib`, `MetalANGLE.framework/.xcframework`). Pocket Arcade's
-port is committed on top and does not modify any upstream file.
+port is committed on top; the only upstream file it modifies is
+`yabause/src/vidsoft.c` (`Patches/vidsoft-frame-change.patch`, applied to
+this tree: VDP1 frame change and erase-write for the software renderer, see
+the commit history for the change and rationale).
 
 The port consists of:
 
@@ -19,6 +22,9 @@ The port consists of:
   RetroAchievements, PlayRecorder). Plus the CMake project that selects the
   upstream files (SH-2 interpreter, Musashi 68000, SCSP, VIDSoft software
   renderer, ISO/CUE/CHD) and the headless macOS harness.
+- `Patches/` — the managed patch, also applied to this tree so the sources
+  build as-is (the app-side `Native/SaturnCore/build-ios.sh` applies it to a
+  freshly extracted archive).
 - `libchdr/` — the pinned libchdr fork (`devmiyax/libchdr` @
   `5a642352731a5abb1322bf0749b0e1822ebb393a`, BSD-3-Clause) with its bundled
   lzma and zstd sources.
