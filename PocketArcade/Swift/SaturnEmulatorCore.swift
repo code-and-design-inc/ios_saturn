@@ -285,9 +285,10 @@ private extension GamepadButton {
     var saturnButton: PASaturnButton? {
         switch self {
         // Pocket Arcade's face vocabulary is positional: B is south, A east,
-        // Y west, and X north. The Saturn's lower row A/B/C sits on the
-        // south/east/outer-right positions, the upper row X/Y/Z on
-        // west/north/outer-left, matching the on-screen captions.
+        // Y west, and X north. On the on-screen Saturn pad (two rows of three)
+        // the bottom row A B C is bound to B/A/right-trigger and the top row
+        // X Y Z to Y/X/left-trigger, so a physical pad's south/east face
+        // buttons are A/B, west/north are X/Y, and the triggers give C/Z.
         case .b: PASaturnButtonA
         case .a: PASaturnButtonB
         case .rightTrigger: PASaturnButtonC

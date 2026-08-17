@@ -93,6 +93,12 @@ void VIDSoftVdp1ReadFrameBuffer(u32 type, u32 addr, void * out);
 void VIDSoftVdp1WriteFrameBuffer(u32 type, u32 addr, u32 val);
 void VIDSoftVdp1EraseWrite(void);
 void VIDSoftVdp1FrameChange(void);
+// Manual erase without change (FCM=1, FCT=0): the display buffer is shown for
+// that field and erased behind the beam, so the erase is applied after the
+// sprite layer has been composited (right after TitanRender). Games that
+// alternate erase/change every field (Virtua Fighter) rely on the erased
+// field still being displayed.
+static int vidsoft_deferred_display_erase = 0;
 int VIDSoftVdp2Reset(void);
 void VIDSoftVdp2DrawStart(void);
 void VIDSoftVdp2DrawEnd(void);
@@ -3527,7 +3533,7 @@ void VIDSoftVdp2DrawStart(void)
 {
    if (Vdp1External.manualerase && !Vdp1External.manualchange)
    {
-      VIDSoftVdp1EraseWrite();
+      vidsoft_deferred_display_erase = 1;
       Vdp1External.manualerase = 0;
    }
    int titanblendmode = TITAN_BLEND_TOP;
@@ -4163,6 +4169,11 @@ void VIDSoftVdp1EraseWrite(void)
 // happens in VIDSoftVdp1FrameChange().
 void VIDSoftVdp1SwapFrameBuffer(void)
 {
+   if (vidsoft_deferred_display_erase)
+   {
+      vidsoft_deferred_display_erase = 0;
+      VIDSoftVdp1EraseWrite();
+   }
 }
 
 //////////////////////////////////////////////////////////////////////////////
