@@ -276,9 +276,54 @@ const char* lastErrorCString()
 void (*g_origVdp1DrawStart)(void) = nullptr;
 void (*g_origVdp2DrawScreens)(void) = nullptr;
 void (*g_origVdp2DrawEnd)(void) = nullptr;
+static void dumpVdp1CommandList(const char* when);
+void (*g_origSync)(void) = nullptr;
+void loggedSync(void) { dumpVdp1CommandList("vblank-in"); if (g_origSync) g_origSync(); }
+void (*g_origVdp1EraseWrite)(void) = nullptr;
+void (*g_origVdp1FrameChange)(void) = nullptr;
+uint64_t g_vdp1DrawStarts = 0, g_vdp1EraseWrites = 0, g_vdp1FrameChanges = 0;
+
+void countedVdp1EraseWrite(void) { g_vdp1EraseWrites++; g_origVdp1EraseWrite(); }
+void countedVdp1FrameChange(void) { g_vdp1FrameChanges++; g_origVdp1FrameChange(); }
+
+// Debug aid (PASATURN_DUMP_VDP1=<first frame>): print the VDP1 command list
+// walked from address 0 at each plot trigger, one line per command.
+static void dumpVdp1CommandList(const char* when)
+{
+    static long firstFrame = -2;
+    if (firstFrame == -2) {
+        const char* env = getenv("PASATURN_DUMP_VDP1");
+        firstFrame = env ? atol(env) : -1;
+    }
+    if (firstFrame < 0 || !g_session || (long)g_session->emulatedFrames < firstFrame) return;
+    u32 addr = 0;
+    u32 returnAddr = 0xFFFFFFFF;
+    printf("[vdp1 list @frame %llu %s]\n", (unsigned long long)g_session->emulatedFrames, when);
+    for (int n = 0; n < 4096; ++n) {
+        u16 cmd = T1ReadWord(Vdp1Ram, addr);
+        u16 link = T1ReadWord(Vdp1Ram, addr + 2);
+        u16 pmod = T1ReadWord(Vdp1Ram, addr + 4);
+        u16 colr = T1ReadWord(Vdp1Ram, addr + 6);
+        s16 xa = (s16)T1ReadWord(Vdp1Ram, addr + 0x0C), ya = (s16)T1ReadWord(Vdp1Ram, addr + 0x0E);
+        s16 xc = (s16)T1ReadWord(Vdp1Ram, addr + 0x14), yc = (s16)T1ReadWord(Vdp1Ram, addr + 0x16);
+        u16 srca = T1ReadWord(Vdp1Ram, addr + 8), size = T1ReadWord(Vdp1Ram, addr + 0xA);
+        printf("  %05X cmd=%04X%s pmod=%04X colr=%04X srca=%04X size=%04X A=(%d,%d) C=(%d,%d)\n", addr, cmd,
+               (cmd & 0x4000) ? " SKIP" : "", pmod, colr, srca, size, xa, ya, xc, yc);
+        if (cmd & 0x8000) break;
+        switch ((cmd & 0x3000) >> 12) {
+        case 0: addr += 0x20; break;
+        case 1: addr = link * 8; break;
+        case 2: if (returnAddr == 0xFFFFFFFF) { returnAddr = addr + 0x20; addr = link * 8; } else addr += 0x20; break;
+        case 3: if (returnAddr != 0xFFFFFFFF) { addr = returnAddr; returnAddr = 0xFFFFFFFF; } else addr += 0x20; break;
+        }
+        if (addr > 0x7FFFF) break;
+    }
+}
 
 void timedVdp1DrawStart(void)
 {
+    g_vdp1DrawStarts++;
+    if (Vdp1External.status == VDP1_STATUS_IDLE || Vdp1Regs->addr == 0) dumpVdp1CommandList("draw-start");
     const uint64_t t0 = nowNanos();
     g_origVdp1DrawStart();
     if (g_session) g_session->perf.vdp1Nanos += nowNanos() - t0;
@@ -304,7 +349,13 @@ void installRendererTimers()
         g_origVdp1DrawStart = VIDSoft.Vdp1DrawStart;
         g_origVdp2DrawScreens = VIDSoft.Vdp2DrawScreens;
         g_origVdp2DrawEnd = VIDSoft.Vdp2DrawEnd;
+        g_origVdp1EraseWrite = VIDSoft.Vdp1EraseWrite;
+        g_origVdp1FrameChange = VIDSoft.Vdp1FrameChange;
+        g_origSync = VIDSoft.Sync;
     }
+    VIDSoft.Sync = loggedSync;
+    VIDSoft.Vdp1EraseWrite = countedVdp1EraseWrite;
+    VIDSoft.Vdp1FrameChange = countedVdp1FrameChange;
     VIDSoft.Vdp1DrawStart = timedVdp1DrawStart;
     VIDSoft.Vdp2DrawScreens = timedVdp2DrawScreens;
     VIDSoft.Vdp2DrawEnd = timedVdp2DrawEnd;
@@ -676,6 +727,9 @@ void PASaturnSessionGetStats(PASaturnSessionRef session, PASaturnStats* out_stat
     out_stats->vdp2Nanos = s->perf.vdp2Nanos;
     out_stats->presentNanos = s->perf.presentNanos;
     out_stats->recentFrameNanosP95 = s->perf.recentP95();
+    out_stats->vdp1DrawStarts = g_vdp1DrawStarts;
+    out_stats->vdp1EraseWrites = g_vdp1EraseWrites;
+    out_stats->vdp1FrameChanges = g_vdp1FrameChanges;
 }
 
 } // extern "C"

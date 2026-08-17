@@ -59,6 +59,9 @@ typedef struct PASaturnStats {
     uint64_t vdp2Nanos;      // VDP2 layer drawing
     uint64_t presentNanos;   // per-pixel compositing + frame copy
     uint64_t recentFrameNanosP95; // p95 of the last 256 frames
+    uint64_t vdp1DrawStarts;      // VDP1 command-list executions (plot triggers)
+    uint64_t vdp1EraseWrites;     // erase-write passes applied by the renderer
+    uint64_t vdp1FrameChanges;    // frame-buffer swaps
 } PASaturnStats;
 
 /// Creates a session and boots the disc. `bios_path` must point at a 512 KiB

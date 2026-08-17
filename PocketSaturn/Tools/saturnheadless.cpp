@@ -90,8 +90,9 @@ int main(int argc, char** argv)
     PASaturnVideoFrame frame{};
     for (int i = 0; i < frames; ++i) {
         if (pressStart) {
-            // Tap START every 2 seconds from frame 300 to move past title screens.
-            bool down = i >= 300 && (i % 120) < 6;
+            // Tap START every 2 seconds from frame 300 to move past title screens,
+            // then stop so an in-game START does not pause the fight.
+            bool down = i >= 300 && i < 3900 && (i % 120) < 6;
             PASaturnSessionSetButton(session, 0, PASaturnButtonStart, down);
         }
         bool rendered = PASaturnSessionRunFrame(session);
@@ -108,9 +109,33 @@ int main(int argc, char** argv)
                 printf("first non-black frame at %d (%dx%d, %.1f%% lit)\n", i, frame.width, frame.height, r * 100.0);
             }
             if (dumpRegs && dumpEvery > 0 && i % dumpEvery == 0) {
-                printf("f%05d VDP1 TVMR=%04X FBCR=%04X PTMR=%04X EDSR=%04X status=%d | VDP2 TVMD=%04X BGON=%04X PRISA=%04X SPCTL=%04X\n",
-                       i, Vdp1Regs->TVMR, Vdp1Regs->FBCR, Vdp1Regs->PTMR, Vdp1Regs->EDSR, Vdp1External.status,
+                PASaturnStats st{};
+                PASaturnSessionGetStats(session, &st);
+                printf("f%05d VDP1 TVMR=%04X FBCR=%04X PTMR=%04X EDSR=%04X EWLR=%04X EWRR=%04X EWDR=%04X draws=%llu erases=%llu changes=%llu | VDP2 TVMD=%04X BGON=%04X PRISA=%04X SPCTL=%04X\n",
+                       i, Vdp1Regs->TVMR, Vdp1Regs->FBCR, Vdp1Regs->PTMR, Vdp1Regs->EDSR, Vdp1Regs->EWLR, Vdp1Regs->EWRR, Vdp1Regs->EWDR,
+                       (unsigned long long)st.vdp1DrawStarts, (unsigned long long)st.vdp1EraseWrites, (unsigned long long)st.vdp1FrameChanges,
                        Vdp2Regs->TVMD, Vdp2Regs->BGON, Vdp2Regs->PRISA, Vdp2Regs->SPCTL);
+                printf("       VDP2 PRISB=%04X PRINA=%04X CCCTL=%04X CCRSA=%04X SFPRMD=%04X SDCTL=%04X WCTLA=%04X WCTLC=%04X CLOFEN=%04X SFSEL=%04X\n",
+                       Vdp2Regs->PRISB, Vdp2Regs->PRINA, Vdp2Regs->CCCTL, Vdp2Regs->CCRSA, Vdp2Regs->SFPRMD, Vdp2Regs->SDCTL,
+                       Vdp2Regs->WCTLA, Vdp2Regs->WCTLC, Vdp2Regs->CLOFEN, Vdp2Regs->SFSEL);
+                {
+                    // Per-line snapshots for the top of the frame: which
+                    // registers change mid-frame (raster effects) and where.
+                    printf("       lines:");
+                    for (int ln = 0; ln < 60; ++ln) {
+                        const Vdp2* L = &Vdp2Lines[ln];
+                        const Vdp2* P = &Vdp2Lines[ln ? ln - 1 : 0];
+                        if (ln == 0 || L->BGON != P->BGON || L->PRINA != P->PRINA || L->SCXIN0 != P->SCXIN0 || L->SCYIN0 != P->SCYIN0 ||
+                            L->CHCTLA != P->CHCTLA || L->MPABN0 != P->MPABN0 || L->PNCN0 != P->PNCN0 || L->CCCTL != P->CCCTL || L->CCRNA != P->CCRNA ||
+                            L->WCTLA != P->WCTLA || L->PRISA != P->PRISA || L->SPCTL != P->SPCTL || L->TVMD != P->TVMD || L->CLOFEN != P->CLOFEN)
+                            printf(" [%d BGON=%04X PRINA=%04X SCX0=%04X SCY0=%04X CHCTLA=%04X MPABN0=%04X CCCTL=%04X CCRNA=%04X WCTLA=%04X PRISA=%04X SPCTL=%04X TVMD=%04X]",
+                                   ln, L->BGON, L->PRINA, L->SCXIN0, L->SCYIN0, L->CHCTLA, L->MPABN0, L->CCCTL, L->CCRNA, L->WCTLA, L->PRISA, L->SPCTL, L->TVMD);
+                    }
+                    printf("\n");
+                }
+                printf("       VDP2 MPOFN=%04X MPABN0=%04X MPCDN0=%04X MPABN1=%04X MPCDN1=%04X PNCN0=%04X PNCN1=%04X CHCTLA=%04X PLSZ=%04X SCXIN0=%04X SCYIN0=%04X SCXIN1=%04X SCYIN1=%04X RAMCTL=%04X\n",
+                       Vdp2Regs->MPOFN, Vdp2Regs->MPABN0, Vdp2Regs->MPCDN0, Vdp2Regs->MPABN1, Vdp2Regs->MPCDN1, Vdp2Regs->PNCN0, Vdp2Regs->PNCN1,
+                       Vdp2Regs->CHCTLA, Vdp2Regs->PLSZ, Vdp2Regs->SCXIN0, Vdp2Regs->SCYIN0, Vdp2Regs->SCXIN1, Vdp2Regs->SCYIN1, Vdp2Regs->RAMCTL);
             }
             if (out && dumpEvery > 0 && i % dumpEvery == 0) {
                 char path[1024];

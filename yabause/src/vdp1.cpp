@@ -76,22 +76,29 @@ condition_variable vdp1_clock_cv;
 mutex vdp1_clock_mtx;
 
 
+// Software renderer: the command list is executed progressively, a budget of
+// commands per scanline (see Vdp1DrawCommands), instead of all at once at the
+// plot trigger. Games rely on the real VDP1 taking most of a field to reach
+// the tail of a long list and keep editing that tail after triggering the
+// draw (Virtua Fighter's HUD sprites), so an instant draw shows stale data.
+// The OpenGL/Vulkan cores keep their own model and are not affected.
+#define VDP1_SOFT_CYCLES_PER_LINE 100
+#define VDP1_SOFT_CYCLES_PER_COMMAND 10
+
+// Separate from vdp1_clock, which vdp2.cpp also uses as a "VDP1 RAM was just
+// written" gate for the VBlank-OUT render.
+static int vdp1_soft_budget = 0;
+
+static int Vdp1SoftProgressive() {
+  return VIDCore != NULL && VIDCore->id == VIDCORE_SOFT;
+}
+
 void Vdp1_onHblank() {
-#if 0
-  {
-    std::unique_lock<std::mutex> lk(vdp1_clock_mtx);
-    vdp1_clock += 100;
-  }
-  if (Vdp1External.status == VDP1_STATUS_RUNNING) {
-#if defined(YAB_ASYNC_RENDERING)
-    vdp1_clock_cv.notify_one();
-#else
-    Vdp1DrawCommands(Vdp1Ram, Vdp1Regs, NULL);
-#endif
-  }
-#else
   vdp1_clock += 100;
-#endif
+  if (Vdp1SoftProgressive() && Vdp1External.status == VDP1_STATUS_RUNNING) {
+    vdp1_soft_budget += VDP1_SOFT_CYCLES_PER_LINE;
+    VIDCore->Vdp1DrawStart();
+  }
 }
 
 
@@ -679,21 +686,20 @@ extern "C" void Vdp1DrawCommands(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
    }
 
    int command_count = 0;
-   u32 returnAddr = 0xffffffff;
+   static u32 vdp1_soft_return_addr = 0xffffffff; // survives budget-limited chunks
+   const int progressive = Vdp1SoftProgressive();
+   u32 returnAddr = progressive ? vdp1_soft_return_addr : 0xffffffff;
 
    while (!(command & 0x8000) && command_count < 4096) { // fix me
       regs->COPR = regs->addr >> 3;
       u32 to = 0;
-#if 0
-#if defined(YAB_ASYNC_RENDERING)
-      vdp1_clock_cv.wait_for(lk, chrono::milliseconds(1000), [] { return (vdp1_clock > 0); });
-#else
-      if (vdp1_clock <= 0) {
-        return;
+      if (progressive) {
+        if (vdp1_soft_budget <= 0) {
+          vdp1_soft_return_addr = returnAddr;
+          return; // out of budget for this line; Vdp1_onHblank resumes
+        }
+        vdp1_soft_budget -= VDP1_SOFT_CYCLES_PER_COMMAND;
       }
-#endif
-      vdp1_clock -= 10;
-#endif
       // First, process the command
       if (!(command & 0x4000)) { // if (!skip)
          switch (command & 0x000F) {
@@ -801,8 +807,10 @@ extern "C" void Vdp1DrawCommands(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 		  regs->LOPR = regs->addr >> 3;
 		  regs->COPR = regs->addr >> 3;
         Vdp1External.status = VDP1_STATUS_IDLE;
+        vdp1_soft_return_addr = 0xffffffff;
       }
    }
+   if (progressive) vdp1_soft_return_addr = returnAddr;
 
    if (Vdp1External.status == VDP1_STATUS_RUNNING) {
      LOG("VDP1: Readched to max comand count = %d", command_count);
@@ -942,6 +950,9 @@ extern "C" void Vdp1Draw(void)
      //printf("COPR = %d at %d\n", Vdp1Regs->COPR, __LINE__);
    }
 
+   if (Vdp1SoftProgressive() && Vdp1External.status == VDP1_STATUS_IDLE) {
+     vdp1_soft_budget = 0;
+   }
    Vdp1External.status = VDP1_STATUS_RUNNING;
    VIDCore->Vdp1DrawStart();
 
