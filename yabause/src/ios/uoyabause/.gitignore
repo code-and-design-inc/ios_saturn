@@ -1,0 +1,21 @@
+# Fastlane Screenshots
+screenshots/
+
+# Xcode User Data
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Build artifacts
+*.app
+*.dSYM.zip
+*.ipa
+
+# fastlane reports
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+# Development environment files
+secrets.plist

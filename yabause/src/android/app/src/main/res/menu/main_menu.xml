@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    
+    <!-- Discord Link Menu Item -->
+    <item
+        android:id="@+id/menu_discord_link"
+        android:title="@string/link_discord_account"
+        android:orderInCategory="100"
+        app:showAsAction="never" />
+    
+    
+    <!-- Add other menu items as needed -->
+    
+</menu>

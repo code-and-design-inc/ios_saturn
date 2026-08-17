@@ -1,0 +1,288 @@
+#version 450
+// VDP1 Compute Rasterizer: per-pixel タイル単位のラスタライズ
+// Plan 2 partial: Polygon (RGB15/CRAM palette) + Distorted Sprite (cm=0..5) 対応。
+// Normal/Scaled Sprite + Polyline + Line + 全 blend モードは後続 phase。
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+#define TILE_SIZE 16
+#define MAX_CMDS_PER_TILE 64
+#define TYPE_NOOP    0u
+#define TYPE_DISTORTED_SPRITE 3u
+#define TYPE_POLYGON 4u
+
+struct Vdp1Cmd {
+    uint  cmdType;
+    uint  pmod;
+    uint  color;
+    uint  srca;
+    uvec2 charSize;
+    uvec2 gouraudAddr;
+    ivec2 v0, v1, v2, v3;
+    ivec4 bbox;
+    ivec4 systemClip;
+    ivec4 userClip;
+    uint  clipMode;
+    uint  flip;          // bit0=Hflip, bit1=Vflip
+    uint  flags;         // VDP1C_FLAG_* bitfield (F13: TRI_SPLIT)
+    uint  _pad2;
+};
+
+struct TileCount {
+    uint count;
+    uint _pad0, _pad1, _pad2;
+};
+
+layout(rgba8, binding = 0) uniform image2D fb;
+layout(std430, binding = 1) restrict readonly buffer CmdSSBO       { Vdp1Cmd cmds[]; };
+layout(std430, binding = 2) restrict readonly buffer TileCountSSBO { TileCount tiles[]; };
+layout(std430, binding = 3) restrict readonly buffer TileListSSBO  { uint cmdIdx[]; };
+
+// Plan 2: VRAM (512KB = 128K uint) と CRAM (4KB = 1K uint) を SSBO で参照
+layout(std430, binding = 4) restrict readonly buffer VramSSBO { uint vram[]; };
+layout(std430, binding = 5) restrict readonly buffer CramSSBO { uint cram[]; };
+
+layout(push_constant) uniform Push {
+    uint numTilesX;
+    uint numTilesY;
+    uint fbWidth;
+    uint fbHeight;
+} pc;
+
+shared uint sortedCmds[MAX_CMDS_PER_TILE];
+shared uint sortedCount;
+
+float edge(vec2 p, vec2 v0, vec2 v1) {
+    return (v1.x - v0.x) * (p.y - v0.y) - (v1.y - v0.y) * (p.x - v0.x);
+}
+
+// Conservative rasterization: quad を 0.5px 外側へ膨張させる。
+// SEGA Rally の道路ストリップ等、隣接 quad の頂点演算誤差で生じる 1px gap を解消。
+// signed perpendicular distance = edge/length なので「edge >= -BIAS*length」で膨張判定。
+// sqrt 回避のため両辺二乗で比較 (ef² <= BIAS² * lenSq when ef < 0)。
+bool insideEdge(vec2 p, vec2 v0, vec2 v1) {
+    const float BIAS_SQ = 0.25;  // (0.5 px)^2
+    float ef = edge(p, v0, v1);
+    if (ef >= 0.0) return true;
+    vec2 e = v1 - v0;
+    return ef * ef <= BIAS_SQ * dot(e, e);
+}
+bool insideQuad(vec2 p, vec2 a, vec2 b, vec2 c, vec2 d) {
+    // CCW 入力前提 (CPU 側で normalizeWinding 済み)
+    return insideEdge(p, a, b) && insideEdge(p, b, c) && insideEdge(p, c, d) && insideEdge(p, d, a);
+}
+
+// VDP1 framebuffer pixel format (RGBA8 として encoding。FBO drawfb shader が解釈):
+//   byte[3] (alpha): bit 7 = S (show), bit 6 = C (1=palette index, 0=direct color),
+//                    bits 3-5 = alpha index, bits 0-2 = priority
+//   Direct color (C=0): byte[0..2] = RGB888 (RGB555 を 8bit へ拡張)
+//   Palette (C=1):      byte[0,1] = 16bit color index, byte[2] = shadow|window flags
+// CRAM 解決は VDP2 が後段の drawfb shader で行うので、ここでは index を保持するだけ。
+//
+// 簡易化: priority=0, alpha=0, shadow=0, window=0 で出力 (Plan 2 後続 phase で対応)
+vec4 packDirect(uint rgb15) {
+    float r = float((rgb15      ) & 0x1Fu) * 8.0 / 255.0;
+    float g = float((rgb15 >>  5) & 0x1Fu) * 8.0 / 255.0;
+    float b = float((rgb15 >> 10) & 0x1Fu) * 8.0 / 255.0;
+    return vec4(r, g, b, 128.0 / 255.0);  // 0x80: S=1, C=0
+}
+vec4 packPalette(uint colorindex) {
+    float r = float(colorindex & 0xFFu) / 255.0;
+    float g = float((colorindex >> 8) & 0xFFu) / 255.0;
+    return vec4(r, g, 0.0, 192.0 / 255.0);  // 0xC0: S=1, C=1
+}
+
+// VRAM byte/word access (uint 配列に pack されているため shift で取得)
+uint vramByte(uint addr) {
+    uint w = vram[addr >> 2];
+    return (w >> ((addr & 3u) * 8u)) & 0xFFu;
+}
+uint vramWord(uint addr) {
+    // Saturn VRAM は big-endian で host memory に格納される
+    // (Vdp1Ram[addr] = high byte, Vdp1Ram[addr+1] = low byte)
+    // memory.h の T1ReadWord が BSWAP16L で host endian へ変換する semantics に合わせる
+    return (vramByte(addr) << 8) | vramByte(addr + 1u);
+}
+
+// inverse bilinear (CCW 入力前提) — host 版 inverseBilinear と同等
+//   b = cross(e0,e1) - cross(e2,q) (Iñigo Quilez 導出)
+//   両根 [0,1] 範囲選択で robustness 向上
+vec2 inverseBilinear(vec2 p, vec2 A, vec2 B, vec2 C, vec2 D) {
+    vec2 e0 = B - A;
+    vec2 e1 = D - A;
+    vec2 e2 = (A - B + C - D);
+    vec2 q  = p - A;
+    float a = e2.x * e1.y - e2.y * e1.x;
+    float b = (e0.x * e1.y - e0.y * e1.x) - (e2.x * q.y - e2.y * q.x);
+    float c = q.x * e0.y - q.y * e0.x;
+    float t;
+    // Relative threshold: see vdp1_compute_tile_shade.comp::inverseBilinear
+    // for rationale (FP residue in axis-aligned quads with X<0 vertices).
+    if (abs(a) * 1e6 < abs(b)) {
+        if (abs(b) < 1e-6) return vec2(0.0);
+        t = -c / b;
+    } else {
+        float disc = max(0.0, b * b - 4.0 * a * c);
+        float sq = sqrt(disc);
+        float t0 = (-b - sq) / (2.0 * a);
+        float t1 = (-b + sq) / (2.0 * a);
+        bool t0ok = (t0 >= -1e-4 && t0 <= 1.0001);
+        bool t1ok = (t1 >= -1e-4 && t1 <= 1.0001);
+        if (t0ok && !t1ok) t = t0;
+        else if (t1ok && !t0ok) t = t1;
+        else t = t0;
+    }
+    vec2 sden = e0 + e2 * t;
+    float s;
+    if (abs(sden.x) > abs(sden.y)) {
+        s = (abs(sden.x) < 1e-6) ? 0.0 : (q.x - e1.x * t) / sden.x;
+    } else {
+        s = (abs(sden.y) < 1e-6) ? 0.0 : (q.y - e1.y * t) / sden.y;
+    }
+    return vec2(s, t);
+}
+
+// 16bpp RGB direct sample (cm=5)。MSB=1 なら direct color、MSB=0 は transparent
+vec4 sample16bppRGB(uint srca, uvec2 charSize, vec2 uv) {
+    uint u = uint(clamp(uv.x * float(charSize.x), 0.0, float(charSize.x) - 1.0));
+    uint v = uint(clamp(uv.y * float(charSize.y), 0.0, float(charSize.y) - 1.0));
+    uint addr = srca * 8u + (v * charSize.x + u) * 2u;
+    uint word = vramWord(addr);
+    if ((word & 0x8000u) == 0u) return vec4(0);
+    return packDirect(word);
+}
+
+// 4bpp Color Bank mode (cm=0)。1 byte = 2 pixel (high nibble = 偶数 u)
+// CRAM lookup は VDP2 が drawfb shader で実施するので palette index を保存するだけ。
+vec4 sample4bppBank(uint srca, uvec2 charSize, vec2 uv, uint colorBank, bool spd) {
+    uint u = uint(clamp(uv.x * float(charSize.x), 0.0, float(charSize.x) - 1.0));
+    uint v = uint(clamp(uv.y * float(charSize.y), 0.0, float(charSize.y) - 1.0));
+    uint byteIdx = (v * charSize.x + u) >> 1;
+    uint b = vramByte(srca * 8u + byteIdx);
+    uint dot = ((u & 1u) == 0u) ? ((b >> 4) & 0xFu) : (b & 0xFu);
+    if (dot == 0u && !spd) return vec4(0);
+    return packPalette(dot | colorBank);
+}
+
+// 4bpp LUT mode (cm=1)。VRAM の colorLut から 16bit エントリを取得し、
+// MSB=1 なら direct color、MSB=0 なら palette index として FB に格納。
+//   colorLut = c.color * 8 (Saturn 仕様)
+vec4 sample4bppLut(uint srca, uvec2 charSize, vec2 uv, uint colorLut, bool spd) {
+    uint u = uint(clamp(uv.x * float(charSize.x), 0.0, float(charSize.x) - 1.0));
+    uint v = uint(clamp(uv.y * float(charSize.y), 0.0, float(charSize.y) - 1.0));
+    uint byteIdx = (v * charSize.x + u) >> 1;
+    uint b = vramByte(srca * 8u + byteIdx);
+    uint dot = ((u & 1u) == 0u) ? ((b >> 4) & 0xFu) : (b & 0xFu);
+    if (dot == 0u && !spd) return vec4(0);
+    uint w = vramWord((dot * 2u + colorLut) & 0x7FFFFu);
+    if ((w & 0x8000u) != 0u) return packDirect(w);
+    return packPalette(w);
+}
+
+// 8bpp Color Bank mode (cm=2/3/4)。dot mask は呼び出し側で適用 (palMask)。
+vec4 sample8bppBank(uint srca, uvec2 charSize, vec2 uv, uint colorBank, uint palMask, bool spd) {
+    uint u = uint(clamp(uv.x * float(charSize.x), 0.0, float(charSize.x) - 1.0));
+    uint v = uint(clamp(uv.y * float(charSize.y), 0.0, float(charSize.y) - 1.0));
+    uint dot = vramByte(srca * 8u + v * charSize.x + u);
+    if (dot == 0u && !spd) return vec4(0);
+    return packPalette((dot & palMask) | colorBank);
+}
+
+void main() {
+    ivec2 pix = ivec2(gl_GlobalInvocationID.xy);
+    // Bounds check: non-16-aligned framebuffers generate OOB threads at tile edges
+    if (pix.x >= int(pc.fbWidth) || pix.y >= int(pc.fbHeight)) return;
+    uint  tileIdx = gl_WorkGroupID.y * pc.numTilesX + gl_WorkGroupID.x;
+    uint  lid = gl_LocalInvocationIndex;
+
+    // 1) cooperative load + insertion sort by cmdId (描画順保証)
+    if (lid == 0u) {
+        uint n = min(tiles[tileIdx].count, uint(MAX_CMDS_PER_TILE));
+        for (uint i = 0u; i < n; ++i) {
+            sortedCmds[i] = cmdIdx[tileIdx * uint(MAX_CMDS_PER_TILE) + i];
+        }
+        // insertion sort (K ≤ 64 で十分)
+        for (uint i = 1u; i < n; ++i) {
+            uint key = sortedCmds[i];
+            int j = int(i) - 1;
+            while (j >= 0 && sortedCmds[j] > key) {
+                sortedCmds[j + 1] = sortedCmds[j];
+                j--;
+            }
+            sortedCmds[j + 1] = key;
+        }
+        sortedCount = n;
+    }
+    barrier();
+    memoryBarrierShared();
+
+    uint n = sortedCount;
+    if (n == 0u) return;
+
+    // 既存グラフィックスパイプライン (Vdp1Renderer の glm::ortho(0,W,H,0)) は
+    // Y 軸反転で offscreen image に書き込み、その image を FramebufferRenderer の
+    // フルスクリーンクワッドが UV.y 反転で読み戻すことで最終表示が正しくなる。
+    // compute は Saturn 座標空間 (y=0 が画面上端) で処理するため、
+    // 物理 image アクセス時のみ Y を反転して既存パイプラインの慣習に合わせる。
+    ivec2 imgPix = ivec2(pix.x, int(pc.fbHeight) - 1 - pix.y);
+
+    vec4 dst = imageLoad(fb, imgPix);
+    bool changed = false;
+
+    for (uint i = 0u; i < n; ++i) {
+        Vdp1Cmd c = cmds[sortedCmds[i]];
+
+        // System clip (Plan 1 ではフル領域だが実装しておく)
+        if (pix.x < 0 || pix.y < 0 || pix.x > c.systemClip.x || pix.y > c.systemClip.y) continue;
+
+        vec2 p = vec2(pix) + vec2(0.5);
+        vec4 src = vec4(0);
+
+        if (c.cmdType == TYPE_POLYGON) {
+            if (!insideQuad(p, vec2(c.v0), vec2(c.v1), vec2(c.v2), vec2(c.v3))) continue;
+            // CMDCOLR の MSB=1 → direct color、MSB=0 → palette index (VDP2 が後段で解決)
+            if ((c.color & 0x8000u) != 0u) {
+                src = packDirect(c.color);
+            } else {
+                src = packPalette(c.color);
+            }
+        } else if (c.cmdType == TYPE_DISTORTED_SPRITE) {
+            if (!insideQuad(p, vec2(c.v0), vec2(c.v1), vec2(c.v2), vec2(c.v3))) continue;
+            vec2 uv = inverseBilinear(p, vec2(c.v0), vec2(c.v1), vec2(c.v2), vec2(c.v3));
+            uv = clamp(uv, 0.0, 1.0);
+            // CW 入力時の B↔D swap で UV 転置が発生 (encoder で flip bit 2 セット)
+            if ((c.flip & 4u) != 0u) uv = vec2(uv.y, uv.x);
+            // CMDCTRL flip 適用 (texture read direction)
+            if ((c.flip & 1u) != 0u) uv.x = 1.0 - uv.x;  // Hflip (CMDCTRL bit 4)
+            if ((c.flip & 2u) != 0u) uv.y = 1.0 - uv.y;  // Vflip (CMDCTRL bit 5)
+            uint cm = (c.pmod >> 3) & 7u;
+            bool spd = (c.pmod & 0x40u) != 0u;
+            if (cm == 0u) {
+                src = sample4bppBank(c.srca, c.charSize, uv, c.color & 0xFFF0u, spd);
+            } else if (cm == 1u) {
+                src = sample4bppLut(c.srca, c.charSize, uv, c.color * 8u, spd);
+            } else if (cm == 2u) {
+                src = sample8bppBank(c.srca, c.charSize, uv, c.color & 0xFFC0u, 0x3Fu, spd);
+            } else if (cm == 3u) {
+                src = sample8bppBank(c.srca, c.charSize, uv, c.color & 0xFF80u, 0x7Fu, spd);
+            } else if (cm == 4u) {
+                src = sample8bppBank(c.srca, c.charSize, uv, c.color & 0xFF00u, 0xFFu, spd);
+            } else if (cm == 5u) {
+                src = sample16bppRGB(c.srca, c.charSize, uv);
+            } else {
+                continue;  // cm=6,7 は予約 (未定義)
+            }
+            if (src.a < 0.5) continue;  // transparent
+        } else {
+            continue;  // 他 type は後続 phase で追加
+        }
+
+        // Plan 2 partial: blend は Replace のみ (Phase 2E で全 blend モード追加)
+        dst = src;
+        changed = true;
+    }
+
+    if (changed) {
+        imageStore(fb, imgPix, dst);
+    }
+}

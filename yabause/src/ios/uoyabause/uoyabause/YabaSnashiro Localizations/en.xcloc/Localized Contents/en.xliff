@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 http://docs.oasis-open.org/xliff/v1.2/os/xliff-core-1.2-strict.xsd">
+  <file original="uoyabause/Base.lproj/Main.storyboard" source-language="en" target-language="en" datatype="plaintext">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="15.4" build-num="15F31d"/>
+    </header>
+    <body>
+      <trans-unit id="0uv-hR-62t.text" xml:space="preserve">
+        <source>Show FPS</source>
+        <target>Show FPS</target>
+        <note>Class = "UILabel"; text = "Show FPS"; ObjectID = "0uv-hR-62t";</note>
+      </trans-unit>
+      <trans-unit id="2kC-86-hOR.text" xml:space="preserve">
+        <source>Load State</source>
+        <target>Load State</target>
+        <note>Class = "UILabel"; text = "Load State"; ObjectID = "2kC-86-hOR";</note>
+      </trans-unit>
+      <trans-unit id="05T-W3-45O.text" xml:space="preserve">
+        <source>Force Landscape Mode</source>
+        <target>Force Landscape Mode</target>
+        <note>Class = "UILabel"; text = "Force Landscape Mode"; ObjectID = "05T-W3-45O";</note>
+      </trans-unit>
+      <trans-unit id="5kh-BO-spI.text" xml:space="preserve">
+        <source>Label</source>
+        <target>Label</target>
+        <note>Class = "UILabel"; text = "Label"; ObjectID = "5kh-BO-spI";</note>
+      </trans-unit>
+      <trans-unit id="7a9-1I-qMs.text" xml:space="preserve">
+        <source>Keep original aspect rate</source>
+        <target>Keep original aspect rate</target>
+        <note>Class = "UILabel"; text = "Keep original aspect rate"; ObjectID = "7a9-1I-qMs";</note>
+      </trans-unit>
+      <trans-unit id="Adw-oe-5dn.headerTitle" xml:space="preserve">
+        <source>Graphics</source>
+        <target>Graphics</target>
+        <note>Class = "UITableViewSection"; headerTitle = "Graphics"; ObjectID = "Adw-oe-5dn";</note>
+      </trans-unit>
+      <trans-unit id="DjX-3S-nbY.text" xml:space="preserve">
+        <source>Rendering Resolution</source>
+        <target>Rendering Resolution</target>
+        <note>Class = "UILabel"; text = "Rendering Resolution"; ObjectID = "DjX-3S-nbY";</note>
+      </trans-unit>
+      <trans-unit id="GDt-1B-FZj.headerTitle" xml:space="preserve">
+        <source>Controller</source>
+        <target>Controller</target>
+        <note>Class = "UITableViewSection"; headerTitle = "Controller"; ObjectID = "GDt-1B-FZj";</note>
+      </trans-unit>
+      <trans-unit id="HEk-JT-gUF.text" xml:space="preserve">
+        <source>Frame Skip</source>
+        <target>Frame Skip</target>
+        <note>Class = "UILabel"; text = "Frame Skip"; ObjectID = "HEk-JT-gUF";</note>
+      </trans-unit>
+      <trans-unit id="Iwo-k1-gyt.text" xml:space="preserve">
+        <source>Show Remap Controls</source>
+        <target>Show Remap Controls</target>
+        <note>Class = "UILabel"; text = "Show Remap Controls"; ObjectID = "Iwo-k1-gyt";</note>
+      </trans-unit>
+      <trans-unit id="KCH-Zr-n0O.text" xml:space="preserve">
+        <source>Use Analog Pad as D-pad</source>
+        <target>Use Analog Pad as D-pad</target>
+        <note>Class = "UILabel"; text = "Use Analog Pad as D-pad"; ObjectID = "KCH-Zr-n0O";</note>
+      </trans-unit>
+      <trans-unit id="KND-t5-hSX.headerTitle" xml:space="preserve">
+        <source>General</source>
+        <target>General</target>
+        <note>Class = "UITableViewSection"; headerTitle = "General"; ObjectID = "KND-t5-hSX";</note>
+      </trans-unit>
+      <trans-unit id="N8h-Be-Hod.normalTitle" xml:space="preserve">
+        <source>Settings</source>
+        <target>Settings</target>
+        <note>Class = "UIButton"; normalTitle = "Settings"; ObjectID = "N8h-Be-Hod";</note>
+      </trans-unit>
+      <trans-unit id="NHI-fu-wtb.title" xml:space="preserve">
+        <source>Yaba Sanshiro 2</source>
+        <target>Yaba Sanshiro 2</target>
+        <note>Class = "UINavigationItem"; title = "Yaba Sanshiro 2"; ObjectID = "NHI-fu-wtb";</note>
+      </trans-unit>
+      <trans-unit id="NIg-ct-7sX.text" xml:space="preserve">
+        <source>Resolution Picker label</source>
+        <target>Resolution Picker label</target>
+        <note>Class = "UILabel"; text = "Resolution Picker label"; ObjectID = "NIg-ct-7sX";</note>
+      </trans-unit>
+      <trans-unit id="Tsw-hZ-S89.text" xml:space="preserve">
+        <source>Cartridge</source>
+        <target>Cartridge</target>
+        <note>Class = "UILabel"; text = "Cartridge"; ObjectID = "Tsw-hZ-S89";</note>
+      </trans-unit>
+      <trans-unit id="X1O-pp-oDF.text" xml:space="preserve">
+        <source>Exit</source>
+        <target>Exit</target>
+        <note>Class = "UILabel"; text = "Exit"; ObjectID = "X1O-pp-oDF";</note>
+      </trans-unit>
+      <trans-unit id="XY2-Ni-Gbc.headerTitle" xml:space="preserve">
+        <source>Emulation menu</source>
+        <target>Emulation menu</target>
+        <note>Class = "UITableViewSection"; headerTitle = "Emulation menu"; ObjectID = "XY2-Ni-Gbc";</note>
+      </trans-unit>
+      <trans-unit id="a6W-wy-CZs.text" xml:space="preserve">
+        <source>Rotate 90 degree</source>
+        <target>Rotate 90 degree</target>
+        <note>Class = "UILabel"; text = "Rotate 90 degree"; ObjectID = "a6W-wy-CZs";</note>
+      </trans-unit>
+      <trans-unit id="a8b-Pg-2IA.text" xml:space="preserve">
+        <source>Adjust Controller</source>
+        <target>Adjust Controller</target>
+        <note>Class = "UILabel"; text = "Adjust Controller"; ObjectID = "a8b-Pg-2IA";</note>
+      </trans-unit>
+      <trans-unit id="dP5-m9-P5R.title" xml:space="preserve">
+        <source>Setting</source>
+        <target>Setting</target>
+        <note>Class = "UINavigationItem"; title = "Setting"; ObjectID = "dP5-m9-P5R";</note>
+      </trans-unit>
+      <trans-unit id="kHL-Tt-8Bi.title" xml:space="preserve">
+        <source>Use Analog pad as D-Pad</source>
+        <target>Use Analog pad as D-Pad</target>
+        <note>Class = "UISwitch"; title = "Use Analog pad as D-Pad"; ObjectID = "kHL-Tt-8Bi";</note>
+      </trans-unit>
+      <trans-unit id="oik-51-mjH.text" xml:space="preserve">
+        <source>Change Disk</source>
+        <target>Change Disk</target>
+        <note>Class = "UILabel"; text = "Change Disk"; ObjectID = "oik-51-mjH";</note>
+      </trans-unit>
+      <trans-unit id="wEc-St-PPd.text" xml:space="preserve">
+        <source>Save State</source>
+        <target>Save State</target>
+        <note>Class = "UILabel"; text = "Save State"; ObjectID = "wEc-St-PPd";</note>
+      </trans-unit>
+    </body>
+  </file>
+  <file original="uoyabause/en.lproj/Info-lite-InfoPlist.strings" source-language="en" target-language="en" datatype="plaintext">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="15.4" build-num="15F31d"/>
+    </header>
+    <body>
+      <trans-unit id="CFBundleDisplayName" xml:space="preserve">
+        <source>Yaba Sanshiro 2 Lite</source>
+        <target>Yaba Sanshiro 2 Lite</target>
+        <note>Bundle display name</note>
+      </trans-unit>
+      <trans-unit id="CFBundleName" xml:space="preserve">
+        <source>YabaSnashiro-Lite</source>
+        <target>YabaSnashiro-Lite</target>
+        <note>Bundle name</note>
+      </trans-unit>
+    </body>
+  </file>
+  <file original="uoyabause/en.lproj/InfoPlist.strings" source-language="en" target-language="en" datatype="plaintext">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="15.4" build-num="15F31d"/>
+    </header>
+    <body>
+      <trans-unit id="CFBundleDisplayName" xml:space="preserve">
+        <source>Yaba Sanshiro 2</source>
+        <target>Yaba Sanshiro 2</target>
+        <note>Bundle display name</note>
+      </trans-unit>
+      <trans-unit id="CFBundleName" xml:space="preserve">
+        <source>YabaSnashiro</source>
+        <target>YabaSnashiro</target>
+        <note>Bundle name</note>
+      </trans-unit>
+    </body>
+  </file>
+  <file original="uoyabause/Localizable.xcstrings" source-language="en" target-language="en" datatype="plaintext">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="15.4" build-num="15F31d"/>
+    </header>
+    <body>
+      <trans-unit id="2x" xml:space="preserve">
+        <source>2x</source>
+        <target state="new">2x</target>
+        <note>Resolution option for 2 times the native resolution</note>
+      </trans-unit>
+      <trans-unit id="4Mbit BackupRam" xml:space="preserve">
+        <source>4Mbit BackupRam</source>
+        <target state="new">4Mbit BackupRam</target>
+        <note>4 megabit backup RAM</note>
+      </trans-unit>
+      <trans-unit id="4x" xml:space="preserve">
+        <source>4x</source>
+        <target state="new">4x</target>
+        <note>Resolution option for 4 times the native resolution</note>
+      </trans-unit>
+      <trans-unit id="8Mbit BackupRam" xml:space="preserve">
+        <source>8Mbit BackupRam</source>
+        <target state="new">8Mbit BackupRam</target>
+        <note>8 megabit backup RAM</note>
+      </trans-unit>
+      <trans-unit id="8Mbit DRAM" xml:space="preserve">
+        <source>8Mbit DRAM</source>
+        <target state="new">8Mbit DRAM</target>
+        <note>8 megabit DRAM</note>
+      </trans-unit>
+      <trans-unit id="16Mbit BackupRam" xml:space="preserve">
+        <source>16Mbit BackupRam</source>
+        <target state="new">16Mbit BackupRam</target>
+        <note>16 megabit backup RAM</note>
+      </trans-unit>
+      <trans-unit id="32Mbit BackupRam" xml:space="preserve">
+        <source>32Mbit BackupRam</source>
+        <target state="new">32Mbit BackupRam</target>
+        <note>32 megabit backup RAM</note>
+      </trans-unit>
+      <trans-unit id="32Mbit DRAM" xml:space="preserve">
+        <source>32Mbit DRAM</source>
+        <target state="new">32Mbit DRAM</target>
+        <note>32 megabit DRAM</note>
+      </trans-unit>
+      <trans-unit id="Analog Mode" xml:space="preserve">
+        <source>Analog Mode</source>
+        <target state="new">Analog Mode</target>
+        <note>Switch to analog mode</note>
+      </trans-unit>
+      <trans-unit id="Are you sure you want to exit?" xml:space="preserve">
+        <source>Are you sure you want to exit?</source>
+        <target state="new">Are you sure you want to exit?</target>
+        <note>Message asking if the user is sure about exiting</note>
+      </trans-unit>
+      <trans-unit id="Cancel" xml:space="preserve">
+        <source>Cancel</source>
+        <target state="new">Cancel</target>
+        <note>Action to cancel the key remapping
+Button title to cancel the upgrade action</note>
+      </trans-unit>
+      <trans-unit id="Change Disk" xml:space="preserve">
+        <source>Change Disk</source>
+        <target state="new">Change Disk</target>
+        <note>Change the game disk</note>
+      </trans-unit>
+      <trans-unit id="Error" xml:space="preserve">
+        <source>Error</source>
+        <target state="new">Error</target>
+        <note>Title for the error alert</note>
+      </trans-unit>
+      <trans-unit id="Exit" xml:space="preserve">
+        <source>Exit</source>
+        <target state="new">Exit</target>
+        <note>Exit the application</note>
+      </trans-unit>
+      <trans-unit id="Exit Confirmation" xml:space="preserve">
+        <source>Exit Confirmation</source>
+        <target state="new">Exit Confirmation</target>
+        <note>Title for exit confirmation alert</note>
+      </trans-unit>
+      <trans-unit id="Fail to open" xml:space="preserve">
+        <source>Fail to open</source>
+        <target state="new">Fail to open</target>
+        <note>Title for the alert when a file fails to open</note>
+      </trans-unit>
+      <trans-unit id="Game Controller" xml:space="preserve">
+        <source>Game Controller</source>
+        <target state="new">Game Controller</target>
+        <note>Game controller settings</note>
+      </trans-unit>
+      <trans-unit id="High Quality but slow" xml:space="preserve">
+        <source>High Quality but slow</source>
+        <target state="new">High Quality but slow</target>
+        <note>Sound option for high quality but slower performance</note>
+      </trans-unit>
+      <trans-unit id="Load State" xml:space="preserve">
+        <source>Load State</source>
+        <target state="new">Load State</target>
+        <note>Load a previously saved game state</note>
+      </trans-unit>
+      <trans-unit id="Low Quality but fast" xml:space="preserve">
+        <source>Low Quality but fast</source>
+        <target state="new">Low Quality but fast</target>
+        <note>Sound option for lower quality but faster performance</note>
+      </trans-unit>
+      <trans-unit id="Native" xml:space="preserve">
+        <source>Native</source>
+        <target state="new">Native</target>
+        <note>Resolution option for native resolution</note>
+      </trans-unit>
+      <trans-unit id="No" xml:space="preserve">
+        <source>No</source>
+        <target state="new">No</target>
+        <note>Cancel the exit action</note>
+      </trans-unit>
+      <trans-unit id="None" xml:space="preserve">
+        <source>None</source>
+        <target state="new">None</target>
+        <note>No backup RAM</note>
+      </trans-unit>
+      <trans-unit id="OK" xml:space="preserve">
+        <source>OK</source>
+        <target state="new">OK</target>
+        <note>Default action button title</note>
+      </trans-unit>
+      <trans-unit id="Original" xml:space="preserve">
+        <source>Original</source>
+        <target state="new">Original</target>
+        <note>Resolution option for original resolution</note>
+      </trans-unit>
+      <trans-unit id="Press a button to map the [%@] key" xml:space="preserve">
+        <source>Press a button to map the [%@] key</source>
+        <target state="new">Press a button to map the [%@] key</target>
+        <note>Message prompting user to press a button to map a key</note>
+      </trans-unit>
+      <trans-unit id="Remap Key" xml:space="preserve">
+        <source>Remap Key</source>
+        <target state="new">Remap Key</target>
+        <note>Title for remapping a key</note>
+      </trans-unit>
+      <trans-unit id="Reset" xml:space="preserve">
+        <source>Reset</source>
+        <target state="new">Reset</target>
+        <note>Reset the game</note>
+      </trans-unit>
+      <trans-unit id="Save State" xml:space="preserve">
+        <source>Save State</source>
+        <target state="new">Save State</target>
+        <note>Save the current state of the game</note>
+      </trans-unit>
+      <trans-unit id="Unbind" xml:space="preserve">
+        <source>Unbind</source>
+        <target state="new">Unbind</target>
+        <note>Action to unbind the current key</note>
+      </trans-unit>
+      <trans-unit id="Upgrade" xml:space="preserve">
+        <source>Upgrade</source>
+        <target state="new">Upgrade</target>
+        <note>Button title to upgrade to the paid version</note>
+      </trans-unit>
+      <trans-unit id="Upgrade Required" xml:space="preserve">
+        <source>Upgrade Required</source>
+        <target state="new">Upgrade Required</target>
+        <note>Title for the upgrade alert</note>
+      </trans-unit>
+      <trans-unit id="Yes" xml:space="preserve">
+        <source>Yes</source>
+        <target state="new">Yes</target>
+        <note>Confirm action to exit the application</note>
+      </trans-unit>
+      <trans-unit id="You can select chd or bin or cue" xml:space="preserve">
+        <source>You can select chd or bin or cue</source>
+        <target state="new">You can select chd or bin or cue</target>
+        <note>Message indicating the supported file formats</note>
+      </trans-unit>
+      <trans-unit id="You have reached the maximum number of files for the free version. Please upgrade to the paid version to add more files." xml:space="preserve">
+        <source>You have reached the maximum number of files for the free version. Please upgrade to the paid version to add more files.</source>
+        <target state="new">You have reached the maximum number of files for the free version. Please upgrade to the paid version to add more files.</target>
+        <note>Message indicating that the user needs to upgrade to the paid version to add more files.</note>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

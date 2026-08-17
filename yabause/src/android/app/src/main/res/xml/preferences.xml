@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright 2019 devMiyax(smiyaxdev@gmail.com)
+
+    This file is part of YabaSanshiro.
+
+    YabaSanshiro is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    YabaSanshiro is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with YabaSanshiro; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+-->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="@string/setting_general"
+        android:icon="@drawable/ic_tune_24">
+
+        <org.uoyabause.android.BiosFilePickerPreference
+            android:key="pref_bios_picker"
+            android:title="@string/bios"
+            android:summary="@string/pref_bios_summary"
+            android:dialogTitle="@string/bios_picker_title" />
+
+        <ListPreference
+            android:key="pref_cart"
+            android:title="@string/cartridge"
+            android:summary="@string/pref_cart_summary"
+            android:dialogTitle="@string/choose_cartridge"
+            android:entries="@array/entries_cartridge_list_preference"
+            android:entryValues="@array/entryvalues_cartridge_list_preference"
+            android:defaultValue="7" />
+
+        <ListPreference
+            android:key="pref_cpu"
+            android:title="@string/cpu_core"
+            android:summary="@string/pref_cpu_summary"
+            android:dialogTitle="@string/choose_cpu_core"
+            android:entries="@array/entries_cpu_list_preference"
+            android:entryValues="@array/entryvalues_cpu_list_preference"
+            android:defaultValue="3" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_use_cpu_affinity"
+            android:title="@string/use_cpu_affinity"
+            android:summary="@string/perf_use_cpu_affinity_detail"
+            android:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_use_sh2_cache"
+            android:title="@string/use_sh2_cache"
+            android:summary="@string/pref_use_sh2_cache_detail"
+            android:defaultValue="true" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_auto_state_save"
+            android:title="@string/pref_auto_state_save_title"
+            android:summaryOn="@string/pref_auto_state_save_summary_on"
+            android:summaryOff="@string/pref_auto_state_save_summary_off"
+            android:defaultValue="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/setting_display"
+        android:icon="@drawable/ic_display_settings_24">
+
+        <ListPreference
+            android:key="pref_resolution"
+            android:title="@string/video_resolution"
+            android:summary="@string/pref_resolution_summary"
+            android:dialogTitle="@string/choose_video_resolution"
+            android:entries="@array/entries_video_resolution_list_preference"
+            android:entryValues="@array/entryvalues_video_resolution_list_preference"
+            android:defaultValue="0" />
+
+        <ListPreference
+            android:key="pref_aspect_rate"
+            android:title="@string/video_aspect_ratio"
+            android:summary="@string/pref_aspect_rate_summary"
+            android:dialogTitle="@string/choose_video_aspect_ratio"
+            android:entries="@array/entries_video_aspect_ratio_list_preference"
+            android:entryValues="@array/entryvalues_video_aspect_ratio_list_preference"
+            android:defaultValue="0" />
+
+        <ListPreference
+            android:key="pref_rbg_resolution"
+            android:title="@string/rbg_resolution"
+            android:summary="@string/pref_rbg_resolution_summary"
+            android:dialogTitle="@string/choose_rbg_resolution"
+            android:entries="@array/entries_rbg_resolution_list_preference"
+            android:entryValues="@array/entryvalues_rbg_resolution_list_preference"
+            android:defaultValue="0" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_landscape"
+            android:title="@string/lock_landscape"
+            android:summaryOn="@string/pref_landscape_summary_on"
+            android:summaryOff="@string/pref_landscape_summary_off"
+            android:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_rotate_screen"
+            android:title="@string/str_rotate_screen"
+            android:summaryOn="@string/pref_rotate_screen_summary_on"
+            android:summaryOff="@string/pref_rotate_screen_summary_off"
+            android:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_immersive_mode"
+            android:title="@string/hide_status_bar_and_navigation_bar"
+            android:summaryOn="@string/pref_immersive_mode_summary_on"
+            android:summaryOff="@string/pref_immersive_mode_summary_off"
+            android:defaultValue="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/setting_rendering"
+        android:icon="@drawable/ic_palette_24">
+
+        <ListPreference
+            android:key="pref_video"
+            android:title="@string/video_core"
+            android:summary="@string/pref_video_summary"
+            android:dialogTitle="@string/choose_video_core"
+            android:entries="@array/entries_video_core_list_preference"
+            android:entryValues="@array/entryvalues_video_core_list_preference"
+            android:defaultValue="-1" />
+
+        <ListPreference
+            android:key="pref_filter"
+            android:title="@string/video_filter"
+            android:summary="@string/pref_filter_summary"
+            android:dialogTitle="@string/choose_video_filter"
+            android:entries="@array/entries_video_filte_list_preference"
+            android:entryValues="@array/entryvalues_video_filte_list_preference"
+            android:defaultValue="0" />
+
+        <ListPreference
+            android:key="pref_polygon_generation"
+            android:title="@string/polygon_generation_type"
+            android:summary="@string/pref_polygon_generation_summary"
+            android:dialogTitle="@string/choose_polygon_generation_type"
+            android:entries="@array/entries_polygon_generation_type"
+            android:entryValues="@array/entryvalues_polygon_generation_type"
+            android:defaultValue="0" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_use_compute_shader"
+            android:title="@string/str_use_compute_shader"
+            android:summaryOn="@string/pref_use_compute_shader_summary_on"
+            android:summaryOff="@string/pref_use_compute_shader_summary_off"
+            android:defaultValue="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/setting_performance"
+        android:icon="@drawable/ic_speed_24">
+
+        <SwitchPreferenceCompat
+            android:key="pref_fps"
+            android:title="@string/fps"
+            android:summaryOn="@string/pref_fps_summary_on"
+            android:summaryOff="@string/pref_fps_summary_off"
+            android:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_frameskip"
+            android:title="@string/frameskip"
+            android:summaryOn="@string/pref_frameskip_summary_on"
+            android:summaryOff="@string/pref_frameskip_summary_off"
+            android:defaultValue="true" />
+
+        <ListPreference
+            android:key="pref_frameLimit"
+            android:title="@string/frameLimit"
+            android:summary="@string/pref_frameLimit_summary"
+            android:dialogTitle="@string/chooseFrameLimit"
+            android:entries="@array/entriesFrameLimit"
+            android:entryValues="@array/entryValuesFrameLimit"
+            android:defaultValue="0" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/input_device_title_player1_controls"
+        android:icon="@drawable/ic_gamepad_24">
+
+        <ListPreference
+            android:key="pref_player1_inputdevice"
+            android:title="@string/input_device"
+            android:summary="@string/pref_input_device_summary"
+            android:dialogTitle="@string/choose_input_device"
+            android:entries="@array/entries_input_device_list_preference"
+            android:entryValues="@array/entryvalues_input_device_list_preference"
+            android:defaultValue="65535" />
+
+        <org.uoyabause.android.InputSettingPreference
+            android:key="pref_player1_inputdef_file"
+            android:title="@string/input_device_setting"
+            android:summary="@string/pref_input_setting_summary" />
+
+        <PreferenceScreen
+            android:summary="@string/pref_onscreen_pad_summary"
+            android:title="@string/onscrenn_pad_setting"
+            android:key="on_screen_pad" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/input_device_title_player2_controls"
+        android:icon="@drawable/ic_gamepad_24">
+
+        <ListPreference
+            android:key="pref_player2_inputdevice"
+            android:title="@string/input_device"
+            android:summary="@string/pref_input_device_summary"
+            android:dialogTitle="@string/choose_input_device"
+            android:entries="@array/entries_input_device_list_preference"
+            android:entryValues="@array/entryvalues_input_device_list_preference"
+            android:defaultValue="65535" />
+
+        <org.uoyabause.android.InputSettingPreference
+            android:key="pref_player2_inputdef_file"
+            android:title="@string/input_device_setting"
+            android:summary="@string/pref_input_setting_summary" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/setting_sound"
+        android:icon="@drawable/ic_volume_up_24">
+
+        <SwitchPreferenceCompat
+            android:key="pref_audio"
+            android:title="@string/audio_output"
+            android:summaryOn="@string/pref_audio_summary_on"
+            android:summaryOff="@string/pref_audio_summary_off"
+            android:defaultValue="true" />
+
+        <ListPreference
+            android:key="pref_sound_engine"
+            android:title="@string/sound_engine"
+            android:summary="@string/pref_sound_engine_summary"
+            android:dialogTitle="@string/choose_sound_engine"
+            android:entries="@array/entries_sound_engine_list_preference"
+            android:entryValues="@array/entryvalues_sound_engine_list_preference"
+            android:defaultValue="1" />
+
+        <ListPreference
+            android:key="scsp_time_sync_mode"
+            android:title="@string/time_synchronization_mode"
+            android:summary="@string/pref_scsp_time_sync_summary"
+            android:dialogTitle="@string/choose_time_synchronization_mode"
+            android:entries="@array/entries_scsp_time_synchronization_mode"
+            android:entryValues="@array/entryvalues_scsp_time_synchronization_mode"
+            android:defaultValue="0" />
+
+        <SeekBarPreference
+            android:key="pref_scsp_sync_per_frame"
+            android:title="@string/scsp_sync"
+            android:summary="@string/pref_scsp_sync_per_frame_summary"
+            android:defaultValue="4"
+            android:max="255"
+            app:min="1"
+            app:showSeekBarValue="true" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- START xml_defaults -->
+<defaultsMap>
+    <entry>
+        <key>order_user</key>
+        <value>girigiri</value>
+    </entry>
+    <entry>
+        <key>order_key</key>
+        <value>yoyuu</value>
+    </entry>
+    <entry>
+        <key>leaderboard_sonicr_1</key>
+        <value>CgkI7qG_1ekVEAIQCQ</value>
+    </entry>
+    <entry>
+        <key>leaderboard_sonicr_2</key>
+        <value>CgkI7qG_1ekVEAIQBQ</value>
+    </entry>
+    <entry>
+        <key>leaderboard_sonicr_3</key>
+        <value>CgkI7qG_1ekVEAIQBg</value>
+    </entry>
+    <entry>
+        <key>leaderboard_sonicr_4</key>
+        <value>CgkI7qG_1ekVEAIQBw</value>
+    </entry>
+    <entry>
+        <key>leaderboard_sonicr_5</key>
+        <value>CgkI7qG_1ekVEAIQCA</value>
+    </entry>
+    <entry>
+        <key>is_enable_subscription_new</key>
+        <value>false</value>
+    </entry>
+</defaultsMap>
+    <!-- END xml_defaults -->

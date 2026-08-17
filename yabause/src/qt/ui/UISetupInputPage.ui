@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>UISetupInputPage</class>
+ <widget class="QWizardPage" name="UISetupInputPage">
+  <property name="geometry">
+   <rect><x>0</x><y>0</y><width>520</width><height>420</height></rect>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QWidget" name="wImage">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size><width>560</width><height>321</height></size>
+     </property>
+     <property name="maximumSize">
+      <size><width>560</width><height>321</height></size>
+     </property>
+     <!-- The picture and the thirteen absolutely-positioned QToolButtons
+          below are copied verbatim (same object names, same geometries)
+          from UIPadSetting.ui, which is the Settings dialog's controller
+          picture. This QWidget carries no layout of its own so those
+          copied geometries keep meaning what they meant there; only the
+          wrapper is new, to let a QWizardPage (which needs its own
+          QVBoxLayout) host the same absolutely-positioned picture. -->
+     <widget class="QLabel" name="label">
+      <property name="geometry"><rect><x>-31</x><y>0</y><width>591</width><height>321</height></rect></property>
+      <property name="pixmap"><pixmap resource="../resources/resources.qrc">:/actions/controller.png</pixmap></property>
+     </widget>
+     <widget class="QToolButton" name="tbUp">
+      <property name="geometry"><rect><x>110</x><y>108</y><width>50</width><height>30</height></rect></property>
+      <property name="focusPolicy"><enum>Qt::NoFocus</enum></property>
+      <property name="toolTip"><string>Up</string></property>
+      <property name="checkable"><bool>true</bool></property>
+      <property name="autoRaise"><bool>true</bool></property>
+     </widget>
+     <widget class="QToolButton" name="tbX">
+      <property name="geometry"><rect><x>338</x><y>125</y><width>42</width><height>43</height></rect></property>
+      <property name="focusPolicy"><enum>Qt::NoFocus</enum></property>
+      <property name="toolTip"><string>X</string></property>
+      <property name="checkable"><bool>true</bool></property>
+      <property name="autoRaise"><bool>true</bool></property>
+     </widget>
+     <widget class="QToolButton" name="tbY">
+      <property name="geometry"><rect><x>382</x><y>93</y><width>42</width><height>43</height></rect></property>
+      <property name="focusPolicy"><enum>Qt::NoFocus</enum></property>
+      <property name="toolTip"><string>Y</string></property>
+      <property name="checkable"><bool>true</bool></property>
+      <property name="autoRaise"><bool>true</bool></property>
+     </widget>
+     <widget class="QToolButton" name="tbZ">
+      <property name="geometry"><rect><x>431</x><y>74</y><width>42</width><height>43</height></rect></property>
+      <property name="focusPolicy"><enum>Qt::NoFocus</enum></property>
+      <property name="toolTip"><string>Z</string></property>
+      <property name="checkable"><bool>true</bool></property>
+      <property name="autoRaise"><bool>true</bool></property>
+     </widget>
+     <widget class="QToolButton" name="tbC">
+      <property name="geometry"><rect><x>461</x><y>120</y><width>54</width><height>58</height></rect></property>
+      <property name="focusPolicy"><enum>Qt::NoFocus</enum></property>
+      <property name="toolTip"><string>C</string></property>
+      <property name="checkable"><bool>true</bool></property>
+      <property name="autoRaise"><bool>true</bool></property>
+     </widget>
+     <widget class="QToolButton" name="tbB">
+      <property name="geometry"><rect><x>401</x><y>142</y><width>54</width><height>58</height></rect></property>
+      <property name="focusPolicy"><enum>Qt::NoFocus</enum></property>
+      <property name="toolTip"><string>B</string></property>
+      <property name="checkable"><bool>true</bool></property>
+      <property name="autoRaise"><bool>true</bool></property>
+     </widget>
+     <widget class="QToolButton" name="tbA">
+      <property name="geometry"><rect><x>350</x><y>179</y><width>54</width><height>58</height></rect></property>
+      <property name="focusPolicy"><enum>Qt::NoFocus</enum></property>
+      <property name="toolTip"><string>A</string></property>
+      <property name="checkable"><bool>true</bool></property>
+      <property name="autoRaise"><bool>true</bool></property>
+     </widget>
+     <widget class="QToolButton" name="tbStart">
+      <property name="geometry"><rect><x>247</x><y>188</y><width>70</width><height>30</height></rect></property>
+      <property name="focusPolicy"><enum>Qt::NoFocus</enum></property>
+      <property name="toolTip"><string>Start</string></property>
+      <property name="checkable"><bool>true</bool></property>
+      <property name="autoRaise"><bool>true</bool></property>
+     </widget>
+     <widget class="QToolButton" name="tbRightTrigger">
+      <property name="geometry"><rect><x>387</x><y>4</y><width>101</width><height>51</height></rect></property>
+      <property name="focusPolicy"><enum>Qt::NoFocus</enum></property>
+      <property name="toolTip"><string>Right trigger</string></property>
+      <property name="checkable"><bool>true</bool></property>
+      <property name="autoRaise"><bool>true</bool></property>
+     </widget>
+     <widget class="QToolButton" name="tbLeftTrigger">
+      <property name="geometry"><rect><x>70</x><y>4</y><width>101</width><height>51</height></rect></property>
+      <property name="focusPolicy"><enum>Qt::NoFocus</enum></property>
+      <property name="toolTip"><string>Left trigger</string></property>
+      <property name="checkable"><bool>true</bool></property>
+      <property name="autoRaise"><bool>true</bool></property>
+     </widget>
+     <widget class="QToolButton" name="tbDown">
+      <property name="geometry"><rect><x>110</x><y>173</y><width>50</width><height>30</height></rect></property>
+      <property name="focusPolicy"><enum>Qt::NoFocus</enum></property>
+      <property name="toolTip"><string>Down</string></property>
+      <property name="checkable"><bool>true</bool></property>
+      <property name="autoRaise"><bool>true</bool></property>
+     </widget>
+     <widget class="QToolButton" name="tbRight">
+      <property name="geometry"><rect><x>154</x><y>131</y><width>30</width><height>50</height></rect></property>
+      <property name="focusPolicy"><enum>Qt::NoFocus</enum></property>
+      <property name="toolTip"><string>Right</string></property>
+      <property name="checkable"><bool>true</bool></property>
+      <property name="autoRaise"><bool>true</bool></property>
+     </widget>
+     <widget class="QToolButton" name="tbLeft">
+      <property name="geometry"><rect><x>86</x><y>131</y><width>30</width><height>50</height></rect></property>
+      <property name="focusPolicy"><enum>Qt::NoFocus</enum></property>
+      <property name="toolTip"><string>Left</string></property>
+      <property name="checkable"><bool>true</bool></property>
+      <property name="autoRaise"><bool>true</bool></property>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="lPrompt">
+     <property name="text"><string>Press the input you want to use.</string></property>
+     <property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property>
+     <property name="wordWrap"><bool>true</bool></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="lProgress">
+     <property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="hlActions">
+     <item>
+      <widget class="QPushButton" name="pbPrevious">
+       <property name="text"><string>Previous button</string></property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pbSkip">
+       <property name="text"><string>Skip this button</string></property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pbSkipAll">
+       <property name="text"><string>Skip input setup</string></property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../resources/resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

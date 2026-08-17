@@ -1,0 +1,1523 @@
+#version 450
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Per-texel forward-mapping VDP1 rasterizer.
+//
+// Saturn VDP1's true rasterization algorithm: walk the texture side and
+// "paste" each texel onto the corresponding screen-space position
+// computed by lerping the 4 polygon vertices.
+//
+//   for v in 0..texHeight-1:
+//       ty = v / texHeight                      // cell-inclusive
+//       left  = lerp(v0, v3, ty)
+//       right = lerp(v1, v2, ty)
+//       for u in 0..texWidth-1:
+//           tx = u / texWidth
+//           p = lerp(left, right, tx)
+//           framebuffer[round(p)] = texture[v][u]
+//
+// At HD upscale, each texel covers an S x S HD pixel block (where
+// S = scaleMax). The block is computed as the rect spanning from this
+// texel's screen position to the NEXT texel's (ty1 = (v+1)/texHeight,
+// tx1 = (u+1)/texWidth), so the cell-inclusive nature falls out naturally
+// without any vertex tweaking gimmicks (no +1 vertex shift, no
+// brEdgeDilation, no DILATE_BR_X/Y flags).
+//
+// dispatch model:
+//   vkCmdDispatch(numCmds, 1, 1)        // 1 workgroup = 1 cmd
+//   local_size = (8, 8, 1)              // 8x8 texels processed at once
+//   charSize > 8 cmds use outer loop in main()
+//
+// Phase 1A scope: NORMAL/SCALED/DISTORTED sprite, color mode = 4bpp Bank,
+// no flip, no gouraud, replace blend, no shadow/mesh.
+// Phase 1B added the rest (full color modes, flip, gouraud, blends,
+// MSB shadow, etc.). Task 1B.7 adds CMDPMOD blend (Replace / Shadow /
+// Half-luminance / Half-trans) + Mesh + MSB shadow via RMW imageLoad +
+// applyBlend + imageStore. Race note: forward shader processes one cmd
+// per workgroup so cross-cmd ordering is preserved by the host's per-
+// dispatch barrier; within a single cmd, rotated/distorted polygons
+// can have multiple texels mapping to the same HD pixel and the GPU
+// schedules workgroups in undefined order, so RMW is racy for those
+// overlaps. tile_shade has the same limitation; Saturn HW does not
+// guarantee strict ordering for overlapping texels either.
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+// =============================================================================
+// Cmd type constants — must match Vdp1ComputeCommands.h::VDP1C_TYPE_*.
+// =============================================================================
+#define TYPE_NOOP             0u
+#define TYPE_NORMAL_SPRITE    1u
+#define TYPE_SCALED_SPRITE    2u
+#define TYPE_DISTORTED_SPRITE 3u
+#define TYPE_POLYGON          4u
+#define TYPE_POLYLINE         5u
+#define TYPE_LINE             6u
+
+// Vdp1Cmd::flags bits (host applyState で設定)。TILE_SHADE 側 (kShadeShaderSrc)
+// と同じ値を使う。FLAG_THIN は thin/sliver polygon を edge supercover で
+// 補完するときに、cover_rect / bbox 側を halfHD 分外側に広げるための gate。
+#define FLAG_THIN             2u
+
+// F18: VDP2 framebuffer encoding extras packed into Vdp1Cmd::vdp2Attrs.
+//   bits 0:15  = normalShadow (per-cmd colorindex value, 0 disables)
+//   bits 16:31 = attrFlags
+#define ATTR_MSB_SHADOW       1u
+#define ATTR_SPRITE_WINDOW    2u
+
+// Vdp1Cmd struct must match tile_shade.comp exactly (shared SSBO layout).
+struct Vdp1Cmd {
+    uint  cmdType;
+    uint  pmod;
+    uint  color;
+    uint  srca;
+    uvec2 charSize;
+    uvec2 gouraudAddr;
+    ivec2 v0, v1, v2, v3;
+    ivec4 bbox;
+    ivec4 systemClip;
+    ivec4 userClip;
+    uint  clipMode;
+    uint  flip;
+    uint  flags;
+    uint  vdp2Attrs;
+    uint  priority;
+    uint  colorcl;
+    uint  pad6;
+    uint  pad7;
+};
+
+layout(rgba8, binding = 0) uniform image2D fb;
+layout(std430, binding = 1) restrict readonly buffer CmdSSBO  { Vdp1Cmd cmds[]; };
+layout(std430, binding = 2) restrict readonly buffer VramSSBO { uint vram[]; };
+
+// Tile-binning forward (perf opt 2026-05-08). When compiled with
+// #define TILE_MODE 1, the shader becomes a per-tile rasterizer that
+// reuses the existing Bin pass output (TileCount + TileCmdList SSBOs)
+// and processes each tile's cmd list in submission order inside one
+// workgroup. Sequencing across cmds is enforced by an intra-workgroup
+// memoryBarrierImage() + barrier() pair which is far cheaper than a
+// pipeline-level vkCmdPipelineBarrier. Tiles are pixel-disjoint by
+// construction so cross-workgroup race is impossible — entire frame
+// renders in one vkCmdDispatch(numTilesX, numTilesY, 1).
+#ifdef TILE_MODE
+#define MAX_CMDS_PER_TILE 64
+struct TileCount { uint count; uint _pad0; uint _pad1; uint _pad2; };
+layout(std430, binding = 3) restrict readonly buffer TileCountSSBO { TileCount tiles[]; };
+layout(std430, binding = 4) restrict readonly buffer TileListSSBO  { uint cmdIdx[]; };
+
+// Saturn LIFO-order sort for tile-binned cmds. Bin shader uses atomicAdd
+// to assign slots, so slot index reflects scheduling order (not cmd id
+// submission order). Without sort here, two cmds binned to the same tile
+// can be processed in reverse order → visible "draw order is wrong"
+// regressions on overlapping sprites. tile_shade.comp uses the exact
+// same shared+insertion-sort pattern; we mirror it here for consistency.
+shared uint sortedCmds[MAX_CMDS_PER_TILE];
+shared uint tileCmdCount_shared;
+#endif
+
+layout(push_constant) uniform Push {
+    uint  fbWidth;
+    uint  fbHeight;
+    float scaleMax;
+    uint  spriteType;
+    // Per-cmd mode: cmdIndex = batch start (gl_WorkGroupID.x added at runtime).
+    // Tile mode: cmdIndex unused (tile loop fetches from TileCmdList).
+    uint  cmdIndex;
+    // Tile mode geometry (zero in per-cmd mode).
+    uint  numTilesX;
+    uint  tileSize;
+    uint  maxCmdsPerTile;
+    // Per-axis HD upscale factor. scaleMax = max(scaleX, scaleY) is
+    // sufficient for band / threshold use (rotation-invariant), but
+    // the axis-aligned BR extension must use scaleX / scaleY
+    // separately so non-uniform aspect ratios extend by exactly 1
+    // Saturn screen cell on each axis.
+    float scaleX;
+    float scaleY;
+} pc;
+
+// =============================================================================
+// VRAM access (Saturn big-endian → uint packed SSBO).
+// Must match tile_shade.comp::vramByte/vramWord byte ordering exactly.
+// =============================================================================
+uint vramByte(uint addr) {
+    uint w = vram[addr >> 2];
+    return (w >> ((addr & 3u) * 8u)) & 0xFFu;
+}
+uint vramWord(uint addr) {
+    return (vramByte(addr) << 8) | vramByte(addr + 1u);
+}
+
+// =============================================================================
+// Pixel encoding — matches tile_shade.comp::packPalette for FB reader
+// (yglshaderes.c Yglprg_vdp2_drawfb_cram_vulkan_f):
+//   alpha byte: 0x80 | (C<<6) | (colorcl<<3) | priority
+//   B byte:     (shadow<<7) | sprite_window
+//   G byte:     colorindex >> 8
+//   R byte:     colorindex & 0xFF
+// =============================================================================
+uint encodeAlphaByte(uint c, uint colorcl, uint priority) {
+    return 0x80u | ((c & 1u) << 6) | ((colorcl & 7u) << 3) | (priority & 7u);
+}
+uint encodeBByte(uint shadow, Vdp1Cmd cmd) {
+    uint sw = (((cmd.vdp2Attrs >> 16) & ATTR_SPRITE_WINDOW) != 0u) ? 0x40u : 0u;
+    return ((shadow & 1u) << 7) | sw;
+}
+vec4 packPalette(uint colorindex, Vdp1Cmd cmd) {
+    float r = float(colorindex & 0xFFu) / 255.0;
+    float g = float((colorindex >> 8) & 0xFFu) / 255.0;
+    float b = float(encodeBByte(0u, cmd)) / 255.0;
+    uint  a = encodeAlphaByte(1u, cmd.colorcl, cmd.priority);
+    return vec4(r, g, b, float(a) / 255.0);
+}
+// Direct RGB (15-bit Saturn color). C=0; FB reader treats this as raw RGB.
+// 5->8 bit expansion uses *8/255 to match graphics path / scanline shader.
+vec4 packDirect(uint rgb15, Vdp1Cmd cmd) {
+    float r = float((rgb15      ) & 0x1Fu) * 8.0 / 255.0;
+    float g = float((rgb15 >>  5) & 0x1Fu) * 8.0 / 255.0;
+    float b = float((rgb15 >> 10) & 0x1Fu) * 8.0 / 255.0;
+    uint a = encodeAlphaByte(0u, cmd.colorcl, cmd.priority);
+    return vec4(r, g, b, float(a) / 255.0);
+}
+// Shadow pixel: VDP1COLOR(C=1, colorcl=0, priority, shadow=1, sprite_window, 0).
+// Used when CMDPMOD MSB shadow is set OR sampled colorindex matches the cmd's
+// normal-shadow value.
+vec4 packShadow(Vdp1Cmd cmd) {
+    float b = float(encodeBByte(1u, cmd)) / 255.0;
+    uint a = encodeAlphaByte(1u, 0u, cmd.priority);
+    return vec4(0.0, 0.0, b, float(a) / 255.0);
+}
+bool isShadowFor(uint colorindex, Vdp1Cmd cmd) {
+    uint normalShadow = cmd.vdp2Attrs & 0xFFFFu;
+    bool msb = ((cmd.vdp2Attrs >> 16) & ATTR_MSB_SHADOW) != 0u;
+    return msb || (normalShadow != 0u && colorindex == normalShadow);
+}
+
+// 4bpp LUT mode only: extract sprite-type-dependent priority/colorcl/
+// normalshadow from a non-RGB LUT word and return the masked color index.
+// Mirrors vidshared.h::Vdp1GetSpritePixelInfo for sprite types 0..F so the
+// VDP2 framebuffer pixel encoding matches the graphics path's per-pixel
+// Vdp1ProcessSpritePixel call (Vdp1Renderer.cpp case 1, line ~3953). For
+// Bank modes (cm=0/2/3/4) the encoding bits live in CMDCOLR and are
+// already extracted host-side by readPriority into cmd.priority/colorcl,
+// so this helper is irrelevant there.
+//
+// `outNormalShadow` is set when the masked colorindex equals the type's
+// "normalshadow magic value" (e.g. 0x7FE for type 0..3,5; 0x3FE for
+// type 4,6; 0x1FE for type 7; 0x7E for type 8; etc) — the call site uses
+// it to emit a shadow pixel with priority preserved but colorcl=0.
+void getLutSpriteInfo(uint pixel, uint type,
+                      out uint outPriority, out uint outColorcl,
+                      out uint outMaskedColor, out bool outNormalShadow) {
+    uint pri = 0u;
+    uint cc = 0u;
+    uint masked = pixel;
+    bool ns = false;
+    if (type == 0x0u) {
+        pri = pixel >> 14;
+        cc  = (pixel >> 11) & 0x7u;
+        masked = pixel & 0x7FFu;
+        ns = (masked == 0x7FEu);
+    } else if (type == 0x1u) {
+        pri = pixel >> 13;
+        cc  = (pixel >> 11) & 0x3u;
+        masked = pixel & 0x7FFu;
+        ns = (masked == 0x7FEu);
+    } else if (type == 0x2u) {
+        pri = (pixel >> 14) & 0x1u;
+        cc  = (pixel >> 11) & 0x7u;
+        masked = pixel & 0x7FFu;
+        ns = (masked == 0x7FEu);
+    } else if (type == 0x3u) {
+        pri = (pixel >> 13) & 0x3u;
+        cc  = (pixel >> 11) & 0x3u;
+        masked = pixel & 0x7FFu;
+        ns = (masked == 0x7FEu);
+    } else if (type == 0x4u) {
+        pri = (pixel >> 13) & 0x3u;
+        cc  = (pixel >> 10) & 0x7u;
+        masked = pixel & 0x3FFu;
+        ns = (masked == 0x3FEu);
+    } else if (type == 0x5u) {
+        pri = (pixel >> 12) & 0x7u;
+        cc  = (pixel >> 11) & 0x1u;
+        masked = pixel & 0x7FFu;
+        ns = (masked == 0x7FEu);
+    } else if (type == 0x6u) {
+        pri = (pixel >> 12) & 0x7u;
+        cc  = (pixel >> 10) & 0x3u;
+        masked = pixel & 0x3FFu;
+        ns = (masked == 0x3FEu);
+    } else if (type == 0x7u) {
+        pri = (pixel >> 12) & 0x7u;
+        cc  = (pixel >> 9)  & 0x7u;
+        masked = pixel & 0x1FFu;
+        ns = (masked == 0x1FEu);
+    } else if (type == 0x8u) {
+        pri = (pixel >> 7) & 0x1u;
+        masked = pixel & 0x7Fu;
+        ns = (masked == 0x7Eu);
+    } else if (type == 0x9u) {
+        pri = (pixel >> 7) & 0x1u;
+        cc  = (pixel >> 6) & 0x1u;
+        masked = pixel & 0x3Fu;
+        ns = (masked == 0x3Eu);
+    } else if (type == 0xAu) {
+        pri = (pixel >> 6) & 0x3u;
+        masked = pixel & 0x3Fu;
+        ns = (masked == 0x3Eu);
+    } else if (type == 0xBu) {
+        cc = (pixel >> 6) & 0x3u;
+        masked = pixel & 0x3Fu;
+        ns = (masked == 0x3Eu);
+    } else if (type == 0xCu) {
+        pri = (pixel >> 7) & 0x1u;
+        masked = pixel & 0xFFu;
+        ns = (masked == 0xFEu);
+    } else if (type == 0xDu) {
+        pri = (pixel >> 7) & 0x1u;
+        cc  = (pixel >> 6) & 0x1u;
+        masked = pixel & 0xFFu;
+        ns = (masked == 0xFEu);
+    } else if (type == 0xEu) {
+        pri = (pixel >> 6) & 0x3u;
+        masked = pixel & 0xFFu;
+        ns = (masked == 0xFEu);
+    } else if (type == 0xFu) {
+        cc = (pixel >> 6) & 0x3u;
+        masked = pixel & 0xFFu;
+        ns = (masked == 0xFEu);
+    }
+    outPriority     = pri;
+    outColorcl      = cc;
+    outMaskedColor  = masked;
+    outNormalShadow = ns;
+}
+// Variant of packPalette that uses caller-supplied priority/colorcl
+// instead of cmd-level ones — used by the 4bpp LUT path where those
+// values come from the LUT word, not CMDCOLR.
+vec4 packPaletteWithAttrs(uint colorindex, uint priority, uint colorcl, Vdp1Cmd cmd) {
+    float r = float(colorindex & 0xFFu) / 255.0;
+    float g = float((colorindex >> 8) & 0xFFu) / 255.0;
+    float b = float(encodeBByte(0u, cmd)) / 255.0;
+    uint a = encodeAlphaByte(1u, colorcl, priority);
+    return vec4(r, g, b, float(a) / 255.0);
+}
+// Variant of packShadow that uses caller-supplied priority — for the
+// 4bpp LUT shadow path where priority comes from the LUT word.
+vec4 packShadowWithPri(uint priority, Vdp1Cmd cmd) {
+    float b = float(encodeBByte(1u, cmd)) / 255.0;
+    uint a = encodeAlphaByte(1u, 0u, priority);
+    return vec4(0.0, 0.0, b, float(a) / 255.0);
+}
+
+// =============================================================================
+// Polygon inside-test helpers (POLYGON-only). For POLYGON the forward shader
+// uses a 1x1 virtual texture, so cover_rect = bbox of the 4 vertices, which
+// over-fills triangles (v3 == v0) and arbitrary non-rectangular quads. We
+// gate the per-pixel store with a 2-triangle decomposition inside test so
+// the bbox sweep paints only the actual polygon shape.
+// =============================================================================
+float edgeFn(vec2 p, vec2 a, vec2 b) {
+    return (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+}
+// Auto-winding inside-triangle test. The third vertex's edge function sign
+// picks the polygon's winding so the test works for both CW and CCW quads.
+// Degenerate triangle (a == c): edgeFn(c, a, b) = 0 -> sgn = +1, e2 always
+// 0, e0 = -e1, so only points exactly on segment a->b pass (zero-area).
+// That's fine; full coverage of a degenerate quad comes from the companion
+// triangle (v0, v1, v2) which is non-degenerate.
+//
+// Edge tolerance INSIDE_TRI_EPS: pixels exactly on a polygon edge should
+// pass the inclusive >=0 test (edge fn = 0 mathematically), but lerp /
+// edgeFn computed in fp32 produces values like -1e-3 due to rounding,
+// causing on-edge pixels to be rejected. For the per-texel quad coverage
+// path (Plan A: insidePolygonQuad called per pixel against (p00,p10,p11,
+// p01)), this manifests as 1-pixel holes along polygon edges where the
+// pixel center exactly straddles a top/bottom edge of a texel that is
+// itself on the polygon border (e.g. tilted distorted sprite where the
+// polygon top edge crosses a pixel center). 2026-05-09 verification on
+// cmd 48 (8x8 16bpp RGB distorted sprite, scaleMax=2) showed 2 such
+// holes at (137,207) and (134,208); adding eps=1e-3 closes both without
+// admitting clearly-outside pixels (edge fn for those is on the order
+// of texel edge length ~2 px, so 1e-3 is 1/2000 of the typical scale).
+const float INSIDE_TRI_EPS = 1e-3;
+bool insideTriangleAuto(vec2 p, vec2 a, vec2 b, vec2 c) {
+    float sgn = edgeFn(c, a, b) >= 0.0 ? 1.0 : -1.0;
+    float e0 = edgeFn(p, a, b);
+    float e1 = edgeFn(p, b, c);
+    float e2 = edgeFn(p, c, a);
+    return (e0 * sgn >= -INSIDE_TRI_EPS)
+        && (e1 * sgn >= -INSIDE_TRI_EPS)
+        && (e2 * sgn >= -INSIDE_TRI_EPS);
+}
+// Inside-quad via 2-triangle decomposition (v0, v1, v2) U (v0, v2, v3).
+// Degenerate quad (v3 == v0): triangle 2 collapses to zero area, only
+// triangle 1 contributes -- correct for Saturn triangles encoded as
+// quads with v3 == v0.
+bool insidePolygonQuad(vec2 p, vec2 v0, vec2 v1, vec2 v2, vec2 v3) {
+    return insideTriangleAuto(p, v0, v1, v2) ||
+           insideTriangleAuto(p, v0, v2, v3);
+}
+
+// =============================================================================
+// Polyline / Line per-pixel coverage helpers (Phase 2C). Copied verbatim from
+// tile_shade.comp so a Saturn-cell-wide line renders identically across the
+// two paths. SUPERCOVER_HALF_SAT in Saturn cells, MIN_SUPERCOVER_HD floor in
+// HD pixels for native-res so sub-pixel rounding never collapses the band.
+// =============================================================================
+const float SUPERCOVER_HALF_SAT      = 0.58;
+const float MIN_SUPERCOVER_HD        = 0.555;
+// FLAG_THIN 専用 band 幅 (Saturn cell 単位)。0.58 では HD で row gap が
+// 残り、1.0 / 0.75 だと thin sprite が膨れすぎたため 0.5 で運用
+// (RES_4x で 2 fb px)。non-thin は SUPERCOVER_HALF_SAT のまま。
+const float THIN_SUPERCOVER_HALF_SAT = 0.50;
+
+float distSqToSegment(vec2 p, vec2 a, vec2 b) {
+    vec2 ab = b - a;
+    float lenSq = dot(ab, ab);
+    if (lenSq < 1e-6) {
+        vec2 dp = p - a;
+        return dot(dp, dp);
+    }
+    float t = clamp(dot(p - a, ab) / lenSq, 0.0, 1.0);
+    vec2 d = p - (a + t * ab);
+    return dot(d, d);
+}
+
+bool isOnSegment(vec2 p, vec2 a, vec2 b, float thrSq) {
+    return distSqToSegment(p, a, b) <= thrSq;
+}
+
+// POLYGON inside test with edge supercover band. Strict-inside alone
+// drops pixels in narrow rows for thin/sliver triangles (e.g. when the
+// polygon's x range at a given y is < 1 pixel wide, no pixel center
+// passes the strict test, leaving the row blank). Saturn HW's Bresenham
+// edge walk guarantees at least one pixel per row by stepping through
+// every y, so the rendered output appears connected. We approximate
+// that here by also accepting pixels within thrSq of any of the 4
+// polygon edges (matches tile_shade's insideOrOnEdge for thin polys).
+//
+// thrSq is computed from SUPERCOVER_HALF_SAT * scaleMax (Saturn-cell-
+// wide band scaled to HD pixels). For convex non-thin polygons, the
+// band sits inside the polygon already so it does not visibly expand
+// the shape; for thin/sliver polygons it fills the per-row gaps.
+bool insidePolygonOrOnEdge(vec2 p, vec2 v0, vec2 v1, vec2 v2, vec2 v3, float thrSq) {
+    if (insidePolygonQuad(p, v0, v1, v2, v3)) return true;
+    return isOnSegment(p, v0, v1, thrSq) ||
+           isOnSegment(p, v1, v2, thrSq) ||
+           isOnSegment(p, v2, v3, thrSq) ||
+           isOnSegment(p, v3, v0, thrSq);
+}
+
+// =============================================================================
+// Inverse bilinear (T1B.11): solve P(s,t) = mix(mix(A,B,s), mix(D,C,s), t)
+// for (s, t). Used by POLYGON per-pixel Gouraud so the screen pixel position
+// projects back to the (s, t) the gouraud table is parameterized over.
+// Copied verbatim from tile_shade.comp (sensitive math; do not edit body).
+// =============================================================================
+float cross2(vec2 a, vec2 b) { return a.x * b.y - a.y * b.x; }
+
+vec2 inverseBilinear(vec2 p, vec2 A, vec2 B, vec2 C, vec2 D) {
+    vec2 e0 = B - A;
+    vec2 e1 = D - A;
+    vec2 e2 = (A - B + C - D);
+    vec2 q  = p - A;
+
+    float a = cross2(e2, e1);
+    float b = cross2(e0, e1) - cross2(e2, q);
+    float c = cross2(q, e0);
+
+    float t;
+    // Relative threshold: treat a as zero when it is much smaller than b.
+    // See vdp1_compute_tile_shade.comp inverseBilinear for the rationale --
+    // FP residue in (A - B + C - D) for flipped/X<0 axis-aligned quads
+    // triggered the quadratic branch and catastrophic cancellation,
+    // collapsing t to 0 or 1.
+    if (abs(a) * 1e6 < abs(b)) {
+        if (abs(b) < 1e-6) return vec2(0);
+        t = -c / b;
+    } else {
+        float disc = max(0.0, b * b - 4.0 * a * c);
+        float sq = sqrt(disc);
+        float t0 = (-b - sq) / (2.0 * a);
+        float t1 = (-b + sq) / (2.0 * a);
+        // Tie-break (mirrors Vdp1ComputeMath.cpp::inverseBilinear):
+        //   1. Both roots in [0, 1]: pick the strictly interior one (closer
+        //      to 0.5). Required for degenerate quads (v2==v3 etc.) where
+        //      one root sits exactly on the collapsed vertex and the other
+        //      is the real interior parameter. Used by Gouraud screen->uv.
+        //   2. Otherwise, closest to [0, 1] (BR-dilation band continuity).
+        float d0 = max(0.0, max(-t0, t0 - 1.0));
+        float d1 = max(0.0, max(-t1, t1 - 1.0));
+        if (d0 == 0.0 && d1 == 0.0) {
+            t = (abs(t0 - 0.5) <= abs(t1 - 0.5)) ? t0 : t1;
+        } else {
+            t = (d0 <= d1) ? t0 : t1;
+        }
+    }
+
+    vec2 sden = e0 + e2 * t;
+    float s;
+    if (abs(sden.x) > abs(sden.y)) {
+        s = abs(sden.x) < 1e-6 ? 0.0 : (q.x - e1.x * t) / sden.x;
+    } else {
+        s = abs(sden.y) < 1e-6 ? 0.0 : (q.y - e1.y * t) / sden.y;
+    }
+    return vec2(s, t);
+}
+
+vec2 computeUV(vec2 P, Vdp1Cmd c) {
+    return clamp(inverseBilinear(P, vec2(c.v0), vec2(c.v1), vec2(c.v2), vec2(c.v3)), 0.0, 1.0);
+}
+
+// =============================================================================
+// Gouraud shading (Phase 1B.6) - Sega VDP1 manual sec 5.2 / Table 5.3.
+//
+// CMDPMOD bit 2 enables Gouraud; cmd.gouraudAddr.x is the VRAM offset of a
+// 4 entry RGB555 vertex color table (8 bytes total, 2 bytes per vertex).
+// Table values are biased: actual_offset = table - 0x10 in 5 bit space, so
+// 0x00 maps to -0x10, 0x10 maps to 0, 0x1F maps to +0x0F. Per-pixel RGB =
+// clamp(sample_rgb + bilinear(offset_table, screen_uv), 0, 0x1F) in 5 bit
+// space. We compute in normalized [0, 1] using the Saturn 5->8 mapping
+// value*8/255 (matches packDirect / sample16bppRGB so offsets compose 1:1).
+//
+// Vertex word order: 0=A=TL=v0, 1=B=TR=v1, 2=C=BR=v2, 3=D=BL=v3.
+// Bit layout: bits 14:10 = B, 9:5 = G, 4:0 = R, bit 15 = X.
+//
+// Important: Gouraud is a screen-space gradient (vertices ABCD are screen
+// corners). Texture flip does NOT affect the gradient orientation; the
+// caller passes the pre-flip per-texel uv (texel center in [0, 1]).
+// =============================================================================
+vec3 applyGouraud(vec3 srcRgb, vec2 uv, Vdp1Cmd c) {
+    if (c.gouraudAddr.y == 0u) return srcRgb;
+    uint addr = c.gouraudAddr.x;
+    vec3 g[4];
+    for (int i = 0; i < 4; ++i) {
+        uint w = vramWord(addr + uint(i) * 2u);
+        g[i] = (vec3(float(w & 0x1Fu),
+                     float((w >> 5u) & 0x1Fu),
+                     float((w >> 10u) & 0x1Fu)) - 16.0) * (8.0 / 255.0);
+    }
+    vec3 top = mix(g[0], g[1], uv.x);
+    vec3 bot = mix(g[3], g[2], uv.x);
+    vec3 offs = mix(top, bot, uv.y);
+    return clamp(srcRgb + offs, 0.0, 1.0);
+}
+
+// =============================================================================
+// CMDPMOD blend (Phase 1B.7).
+//   bits 1:0 = Color Calc blend (0=replace, 1=shadow, 2=half-lum, 3=half-trans).
+//   bit 2    = Gouraud enable (handled by applyGouraud BEFORE this stage).
+//   bit 8    = Mesh    (drop pixel on (x ^ y) odd checkerboard).
+//   bit 15   = MSB shadow (set dst.a to 1.0 as VDP2 marker).
+// Saturn cc values 4..7 = Gouraud + (cc & 3); we mask to 2 bits here so
+// the Gouraud-paired blend modes route to the same Shadow/Half-lum/etc.
+// branches as their non-Gouraud cousins. Mirrors tile_shade::applyBlend
+// 1:1; signature is the same (vec4 src, vec4 dst, uint pmod, ivec2 pix).
+// =============================================================================
+// Sprint 6 S2: mediump signatures. VDP1 color values are 8-bit per channel
+// stored as 0-1 normalised float (rgba8 storage image). Mediump float on
+// Adreno gives ~10-bit precision over 0-1 which is more than enough for
+// blend math; switching from highp halves ALU cost on Adreno per Qualcomm
+// best-practices doc. The implicit highp -> mediump conversion at the
+// caller is free on Adreno (no extra instruction).
+mediump vec4 applyBlend(mediump vec4 src, mediump vec4 dst, uint pmod, ivec2 pix) {
+    if ((pmod & 0x100u) != 0u && ((pix.x ^ pix.y) & 1) == 0) return dst;
+
+    uint cc = pmod & 0x3u;
+    mediump vec4 result;
+    if (cc == 1u) {
+        // Shadow: gate on (dst.a & 0xC0) == 0x80 to darken only sprite-drawn
+        // RGB-direct pixels. Palette dst stores colorindex in r/g; darkening
+        // would shift the CRAM index. Mirrors tile_shade::applyBlend.
+        uint dstA = uint(dst.a * 255.0);
+        if ((dstA & 0xC0u) != 0x80u) return dst;
+        result = vec4(dst.rgb * 0.5, dst.a);
+    }
+    else if (cc == 2u) result = vec4(src.rgb * 0.5, src.a);
+    else if (cc == 3u) {
+        // Half-transparent gates on dst alpha bit 6 (palette-indexed flag set
+        // by encodeAlphaByte's 'c' parameter). RGB-direct dst -> blend;
+        // palette dst -> replace, since dst.r/g hold a palette index, not
+        // color. Mirrors VDP1GlowShadingAndHalfTransOperation graphics path.
+        uint dstA = uint(dst.a * 255.0);
+        if ((dstA & 0x40u) == 0u) {
+            result = vec4((src.rgb + dst.rgb) * 0.5, src.a);
+        } else {
+            result = src;
+        }
+    }
+    else               result = src;
+
+    if ((pmod & 0x8000u) != 0u) result.a = 1.0;
+    return result;
+}
+
+// Pmod-aware blend (perf opt 2026-05-08). When a cmd uses cc==0 (Replace) or
+// cc==2 (Half-luminance), applyBlend never reads dst — so we can skip the
+// imageLoad entirely and fold mesh / MSB shadow inline.
+//
+//   cc == 0: result = src                 (no dst)
+//   cc == 2: result = vec4(src.rgb*0.5, src.a)   (no dst)
+//   mesh   : "return dst" in applyBlend becomes "skip imageStore" here
+//            (functionally equivalent — preserving the prior pixel value).
+//   MSB sh : result.a = 1.0 inline (independent of dst).
+//
+// Returns true when the pixel should be stored, false to skip (mesh checker).
+// Caller branches on (cc == 0 || cc == 2) once per workgroup so the path is
+// uniform across all 64 invocations — no warp divergence.
+// Note: 'result' is left as highp vec4 (no mediump qualifier) so callers
+// can pass a normal `vec4 result` local without precision-mismatch errors.
+// Internal blend math still benefits from mediump src.
+bool applyBlendNoDst(out vec4 result, mediump vec4 src, uint pmod, ivec2 pix) {
+    if ((pmod & 0x100u) != 0u && ((pix.x ^ pix.y) & 1) == 0) return false;
+    uint cc = pmod & 0x3u;
+    mediump vec4 r = (cc == 2u) ? vec4(src.rgb * 0.5, src.a) : src;
+    if ((pmod & 0x8000u) != 0u) r.a = 1.0;
+    result = r;
+    return true;
+}
+
+// =============================================================================
+// Per-texel sample functions. Forward shader is per-texel (texel index given
+// directly as `t = (tx, ty)`) — unlike tile_shade which receives a vec2 uv
+// and converts to integer texel via clamp(uv * charSize). Returns vec4(0)
+// for transparent (caller skips imageStore).
+//
+// Phase 1B.1 scope: bare color decode + spd transparency + 4bpp LUT direct
+// entry (priority forced to 0). Phase 1B.3 added SPCTL bit 5 direct RGB
+// branch in Bank (cm=0/2/3/4) and 16bpp RGB (cm=5) samplers. Phase 1B.4
+// added Saturn end-code (F9) terminator scan: when CMDPMOD bit 7 (ECD) is
+// CLEAR, dot==0xF (4bpp) / (dot & palMask)==palMask (8bpp) / 0x7FFF (16bpp)
+// is a row-terminator. 1st end-code in a row -> that pixel transparent;
+// once endcnt >= 2 ALL subsequent pixels in the row are transparent
+// (Vdp1Renderer.cpp:3940-3943). Implemented per-texel by walking [0, t.x)
+// counting end-codes: O(t.x) per texel, but charSize.x is typically <= 64
+// so this stays well within budget.
+// Deferred to later tasks:
+//   - Shadow check (isShadowFor)          -> future
+//   - LUT sprite-type attr extract        -> 1B.7
+// =============================================================================
+vec4 sampleTexel4bppBank(Vdp1Cmd c, uvec2 t, uint colorBank, bool spd, bool endcEnabled) {
+    uvec2 sz = c.charSize;
+    // End-code terminator scan: count 0xF nibbles in [0, t.x) on row t.y.
+    // Once endcnt >= 2 the whole tail of the row is transparent.
+    if (endcEnabled) {
+        uint endcnt = 0u;
+        for (uint i = 0u; i < t.x; ++i) {
+            uint bi = vramByte(c.srca * 8u + ((t.y * sz.x + i) >> 1));
+            uint di = ((i & 1u) == 0u) ? ((bi >> 4) & 0xFu) : (bi & 0xFu);
+            if (di == 0xFu) {
+                endcnt++;
+                if (endcnt >= 2u) return vec4(0);
+            }
+        }
+    }
+    uint byteIdx = (t.y * sz.x + t.x) >> 1;
+    uint b = vramByte(c.srca * 8u + byteIdx);
+    uint dot = ((t.x & 1u) == 0u) ? ((b >> 4) & 0xFu) : (b & 0xFu);
+    if (endcEnabled && dot == 0xFu) return vec4(0);
+    if (dot == 0u && !spd) return vec4(0);
+    uint colorindex = dot | colorBank;
+    if (isShadowFor(colorindex, c)) return packShadow(c);
+    // SPCTL bit 5 (sprite-RGB-enable) + colorindex bit 0x8000 -> direct RGB
+    // (vidogl.c:653-657, 4bpp Bank case 0). Mirrors tile_shade sample4bppBank.
+    bool spctlRgb = (pc.spriteType & 0x20u) != 0u;
+    if ((colorindex & 0x8000u) != 0u && spctlRgb) return packDirect(colorindex, c);
+    return packPalette(colorindex, c);
+}
+vec4 sampleTexel4bppLut(Vdp1Cmd c, uvec2 t, uint colorLut, bool spd, bool endcEnabled) {
+    uvec2 sz = c.charSize;
+    // End-code terminator scan (same nibble pattern as 4bpp Bank).
+    if (endcEnabled) {
+        uint endcnt = 0u;
+        for (uint i = 0u; i < t.x; ++i) {
+            uint bi = vramByte(c.srca * 8u + ((t.y * sz.x + i) >> 1));
+            uint di = ((i & 1u) == 0u) ? ((bi >> 4) & 0xFu) : (bi & 0xFu);
+            if (di == 0xFu) {
+                endcnt++;
+                if (endcnt >= 2u) return vec4(0);
+            }
+        }
+    }
+    uint byteIdx = (t.y * sz.x + t.x) >> 1;
+    uint b = vramByte(c.srca * 8u + byteIdx);
+    uint dot = ((t.x & 1u) == 0u) ? ((b >> 4) & 0xFu) : (b & 0xFu);
+    if (endcEnabled && dot == 0xFu) return vec4(0);
+    if (dot == 0u && !spd) return vec4(0);
+    uint w = vramWord((dot * 2u + colorLut) & 0x7FFFFu);
+    if ((w & 0x8000u) != 0u) {
+        // RGB direct LUT entry — graphics path forces priority=0
+        // (Vdp1Renderer.cpp:3950). Mirror that so FB reader's priority slot
+        // lookup ends up at slot 0 for direct-color LUT pixels.
+        if (isShadowFor(w, c)) return packShadow(c);
+        vec4 c_direct = packDirect(w, c);
+        uint a = encodeAlphaByte(0u, c.colorcl, 0u);
+        c_direct.a = float(a) / 255.0;
+        return c_direct;
+    }
+    // Palette LUT entry: graphics path runs Vdp1ProcessSpritePixel on the
+    // LUT word per pixel (Vdp1Renderer.cpp:3953), which extracts
+    // priority/colorcl/normalshadow per VDP2 sprite type and masks the
+    // colorindex. Without this, compute leaves the upper bits inside the
+    // colorindex (e.g. type-0 with LUT=0x4807 → colorindex=0x4807 instead
+    // of 0x0007; priority/colorcl from CMDCOLR instead of the LUT word).
+    uint pri; uint cc_; uint masked; bool ns;
+    getLutSpriteInfo(w, pc.spriteType & 0xFu, pri, cc_, masked, ns);
+    bool msb = ((c.vdp2Attrs >> 16) & ATTR_MSB_SHADOW) != 0u;
+    if (msb || ns) return packShadowWithPri(pri, c);
+    return packPaletteWithAttrs(masked, pri, cc_, c);
+}
+vec4 sampleTexel8bppBank(Vdp1Cmd c, uvec2 t, uint colorBank, uint palMask, bool spd, bool endcEnabled) {
+    uvec2 sz = c.charSize;
+    // End-code terminator scan: 8bpp end-code is (dot & palMask) == palMask
+    // (per palMask width 0x3F/0x7F/0xFF for cm=2/3/4).
+    if (endcEnabled) {
+        uint endcnt = 0u;
+        for (uint i = 0u; i < t.x; ++i) {
+            uint di = vramByte(c.srca * 8u + t.y * sz.x + i);
+            if ((di & palMask) == palMask) {
+                endcnt++;
+                if (endcnt >= 2u) return vec4(0);
+            }
+        }
+    }
+    uint dot = vramByte(c.srca * 8u + t.y * sz.x + t.x);
+    if (endcEnabled && (dot & palMask) == palMask) return vec4(0);
+    if (dot == 0u && !spd) return vec4(0);
+    uint colorindex = (dot & palMask) | colorBank;
+    if (isShadowFor(colorindex, c)) return packShadow(c);
+    // SPCTL bit 5 + colorindex bit 0x8000 -> direct RGB (8bpp Bank cm=2/3/4
+    // mirror the 4bpp Bank case 0 path). Same rationale as sample4bppBank.
+    bool spctlRgb = (pc.spriteType & 0x20u) != 0u;
+    if ((colorindex & 0x8000u) != 0u && spctlRgb) return packDirect(colorindex, c);
+    return packPalette(colorindex, c);
+}
+vec4 sampleTexel16bppRGB(Vdp1Cmd c, uvec2 t, bool spd, bool endcEnabled) {
+    uvec2 sz = c.charSize;
+    // End-code terminator scan: 16bpp end-code value is 0x7FFF.
+    if (endcEnabled) {
+        uint endcnt = 0u;
+        for (uint i = 0u; i < t.x; ++i) {
+            uint wi = vramWord(c.srca * 8u + (t.y * sz.x + i) * 2u);
+            if (wi == 0x7FFFu) {
+                endcnt++;
+                if (endcnt >= 2u) return vec4(0);
+            }
+        }
+    }
+    uint addr = c.srca * 8u + (t.y * sz.x + t.x) * 2u;
+    uint word = vramWord(addr);
+    // bit 15 clear AND SPD clear -> transparent
+    // bit 15 set + SPCTL bit 5   -> direct RGB (1B.3: gated to match tile_shade)
+    // otherwise                  -> palette (16-bit colorindex)
+    if ((word & 0x8000u) == 0u && !spd) return vec4(0);
+    if (endcEnabled && word == 0x7FFFu) return vec4(0);
+    bool spctlRgb = (pc.spriteType & 0x20u) != 0u;
+    if ((word & 0x8000u) != 0u && spctlRgb) {
+        if (isShadowFor(word, c)) return packShadow(c);
+        return packDirect(word, c);
+    }
+    // 16bpp palette pixel: per-pixel Vdp1ProcessSpritePixel (getLutSpriteInfo),
+    // mirroring the 4bpp LUT path / vidogl.c readTexture. Without it, palette
+    // sprite types > 0 (Mr. Bones forest skeleton = type 7) lost the per-pixel
+    // priority slot (dot>>12)&7 and were discarded when that PRISA slot was 0.
+    uint pri; uint cc_; uint masked; bool ns;
+    getLutSpriteInfo(word, pc.spriteType & 0xFu, pri, cc_, masked, ns);
+    bool msb = ((c.vdp2Attrs >> 16) & ATTR_MSB_SHADOW) != 0u;
+    if (msb || ns) return packShadowWithPri(pri, c);
+    return packPaletteWithAttrs(masked, pri, cc_, c);
+}
+
+// Per-cmd processing kernel. Both per-cmd dispatch and tile-binning forward
+// call this with different clipRect values.
+//   clipRect = (xmin, ymin, xmax, ymax) in HD pixel coords, exclusive on
+//              xmax/ymax (i.e. half-open).
+//   per-cmd : clipRect = full screen
+//   tile    : clipRect = (tileMin, tileMin + tileSize)
+// All inner pixel sweeps clamp to clipRect so writes outside the tile are
+// elided up front (instead of being filtered per-pixel by systemClip /
+// fbWidth / fbHeight checks). For the line/polyline path, iteration starts
+// at max(c.bbox.xy, clipRect.xy) so threads only walk the tile-bound range
+// — tiny lines that miss the tile early-out at the loop bound.
+void processCmd(Vdp1Cmd c, ivec4 clipRect) {
+    // Phase 2C: sprite + POLYGON + POLYLINE + LINE. All 6 VDP1 draw cmd types
+    // handled in forward; tile_shade remains the fallback host can still pick
+    // when useForwardMapping=false.
+    bool isPolygon  = (c.cmdType == TYPE_POLYGON);
+    bool isPolyline = (c.cmdType == TYPE_POLYLINE);
+    bool isLine     = (c.cmdType == TYPE_LINE);
+    bool isLineLike = isPolyline || isLine;
+    if (c.cmdType != TYPE_DISTORTED_SPRITE &&
+        c.cmdType != TYPE_NORMAL_SPRITE &&
+        c.cmdType != TYPE_SCALED_SPRITE &&
+        !isPolygon && !isLineLike) return;
+
+    // pmod-aware imageLoad gating (perf opt 2026-05-08). Hoist cc / needsDst
+    // out of the per-pixel loop — every thread in this workgroup processes
+    // the same cmd so the branch is workgroup-uniform (no warp divergence).
+    // cc==0 (Replace) と cc==2 (Half-luminance) は dst を読まないので
+    // imageLoad を省略する applyBlendNoDst パスへ。Saturn cmd の大半は
+    // cc==0 (Replace) なので per-pixel で 1 回の memory transaction
+    // (imageLoad) を削減でき、Storage Image cache 圧も下がる。
+    uint pmodCc = c.pmod & 0x3u;
+    bool needsDst = (pmodCc == 1u || pmodCc == 3u);
+
+    // Polyline / Line: per-pixel pull within the cmd's bbox. No texture and no
+    // forward-push concept; lines are inherently per-pixel on Saturn HW
+    // (Bresenham, ~1 cell thick). We distribute the bbox across the 8x8
+    // workgroup with a stride-loop so any bbox size is covered by one cmd.
+    if (isLineLike) {
+        vec4 src;
+        if (isShadowFor(c.color, c)) {
+            src = packShadow(c);
+        } else if ((c.color & 0x8000u) != 0u) {
+            src = packDirect(c.color, c);
+        } else {
+            src = packPalette(c.color, c);
+        }
+
+        // thrSq: distance-to-segment threshold in HD-pixel-squared units.
+        // halfHD = max(MIN_SUPERCOVER_HD, SUPERCOVER_HALF_SAT * scaleMax) so
+        // a "1 Saturn cell wide" line stays visually consistent across native
+        // and 2x/4x upscale (matches tile_shade).
+        float halfHD = max(MIN_SUPERCOVER_HD, SUPERCOVER_HALF_SAT * pc.scaleMax);
+        float thrSq  = halfHD * halfHD;
+
+        // clipRect intersects with cmd bbox so lines that miss this tile
+        // early-out without walking off-tile pixels (per-cmd mode passes
+        // full screen so this collapses to the original cmd-bbox sweep).
+        int sweepMinX = max(c.bbox.x, clipRect.x);
+        int sweepMinY = max(c.bbox.y, clipRect.y);
+        int sweepMaxX = min(c.bbox.z + 1, clipRect.z);
+        int sweepMaxY = min(c.bbox.w + 1, clipRect.w);
+        int x0 = sweepMinX + int(gl_LocalInvocationID.x);
+        int y0 = sweepMinY + int(gl_LocalInvocationID.y);
+        int x1 = sweepMaxX;
+        int y1 = sweepMaxY;
+
+        for (int y = y0; y < y1; y += int(gl_WorkGroupSize.y)) {
+            for (int x = x0; x < x1; x += int(gl_WorkGroupSize.x)) {
+                if (x < 0 || y < 0) continue;
+                if (x > c.systemClip.x || y > c.systemClip.y) continue;
+                if (x >= int(pc.fbWidth) || y >= int(pc.fbHeight)) continue;
+                if (c.clipMode == 1u) {
+                    if (x < c.userClip.x || x > c.userClip.z ||
+                        y < c.userClip.y || y > c.userClip.w) continue;
+                } else if (c.clipMode == 2u) {
+                    if (x >= c.userClip.x && x <= c.userClip.z &&
+                        y >= c.userClip.y && y <= c.userClip.w) continue;
+                }
+
+                vec2 p = vec2(float(x) + 0.5, float(y) + 0.5);
+                bool hit;
+                if (isPolyline) {
+                    // Closed 4-segment loop (v0->v1->v2->v3->v0).
+                    hit = isOnSegment(p, vec2(c.v0), vec2(c.v1), thrSq) ||
+                          isOnSegment(p, vec2(c.v1), vec2(c.v2), thrSq) ||
+                          isOnSegment(p, vec2(c.v2), vec2(c.v3), thrSq) ||
+                          isOnSegment(p, vec2(c.v3), vec2(c.v0), thrSq);
+                } else {
+                    // Line: single segment v0->v1. encodeLine duplicates
+                    // v2=v1, v3=v0 just for bbox; checking only v0->v1 here
+                    // avoids double-rasterizing the same segment.
+                    hit = isOnSegment(p, vec2(c.v0), vec2(c.v1), thrSq);
+                }
+                if (!hit) continue;
+
+                // Per-pixel Gouraud. Polyline = inverse-bilinear over the 4
+                // quad vertices (matches polygon's screen-space gradient);
+                // line = 1D parametric t along v0->v1 with v=0 (gouraud table
+                // entries 0/1 act as endpoints, 2/3 unused for a single
+                // segment, mirroring tile_shade behavior).
+                vec4 finalSrc = src;
+                if (c.gouraudAddr.y != 0u) {
+                    vec2 lineUv;
+                    if (isPolyline) {
+                        lineUv = computeUV(p, c);
+                    } else {
+                        vec2 ab = vec2(c.v1) - vec2(c.v0);
+                        float denom = max(dot(ab, ab), 1e-6);
+                        float t = clamp(dot(p - vec2(c.v0), ab) / denom, 0.0, 1.0);
+                        lineUv = vec2(t, 0.0);
+                    }
+                    finalSrc.rgb = applyGouraud(finalSrc.rgb, lineUv, c);
+                }
+
+                ivec2 imgPix = ivec2(x, int(pc.fbHeight) - 1 - y);
+                if (needsDst) {
+                    vec4 dst = imageLoad(fb, imgPix);
+                    vec4 result = applyBlend(finalSrc, dst, c.pmod, ivec2(x, y));
+                    imageStore(fb, imgPix, result);
+                } else {
+                    vec4 result;
+                    if (applyBlendNoDst(result, finalSrc, c.pmod, ivec2(x, y))) {
+                        imageStore(fb, imgPix, result);
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    // POLYGON has no texture (cmd.charSize is (0,0)). Treat it as a 1x1 virtual
+    // texture: a single texel covers the full polygon, sampled directly from
+    // cmd.color (no VRAM read). The forward mapping then fills the polygon's
+    // screen extent with that single color.
+    uvec2 effCharSize = isPolygon ? uvec2(1u, 1u) : c.charSize;
+
+    if (effCharSize.x == 0u || effCharSize.y == 0u) return;
+
+    // Sprint 4 S3 polygon fast path: the original texel-grid loop runs only
+    // once for polygon (effCharSize=1x1) and only thread (lid=0,0) does
+    // meaningful work — the other 63 threads early-continue at the
+    // `u >= effCharSize.x || v >= effCharSize.y` gate. Adreno measurements
+    // showed ~14.5ms per full-screen polygon cmd (single-thread sequential
+    // imageLoad/imageStore over 71680 pixels). Distribute the pixel scan
+    // across the 8x8 thread block via stride loop for ~64x parallelism.
+    //
+    // Equivalence with the scalar path below:
+    //   - effCharSize=1x1 -> texel (0,0) -> p00=v0 p10=v1 p01=v3 p11=v2
+    //     so cmin/cmax = bbox(v0..v3) (matches polyMin/polyMax)
+    //   - cmax += vec2(max(1.0, scaleMax)) cell-inclusive BR dilation
+    //   - coverage: insidePolygonOrOnEdge(v0..v3, thrSq_p) preserved
+    //   - color: shadow / direct / palette via packShadow/Direct/Palette
+    //   - blend: needsDst gate -> applyBlend or applyBlendNoDst
+    // FLAG_THIN polygons fall through to the scalar path so the THIN
+    // dilation (cmin/cmax += thinHalfHD) is honoured.
+    if (isPolygon && (c.flags & FLAG_THIN) == 0u) {
+        vec4 src;
+        if (isShadowFor(c.color, c)) {
+            src = packShadow(c);
+        } else if ((c.color & 0x8000u) != 0u) {
+            src = packDirect(c.color, c);
+        } else {
+            src = packPalette(c.color, c);
+        }
+        if (src.a < 0.5) return;
+
+        vec2 polyMin = min(min(vec2(c.v0), vec2(c.v1)),
+                           min(vec2(c.v2), vec2(c.v3)));
+        vec2 polyMax = max(max(vec2(c.v0), vec2(c.v1)),
+                           max(vec2(c.v2), vec2(c.v3)));
+        polyMax += vec2(max(1.0, pc.scaleMax));
+
+        int x0 = max(int(floor(polyMin.x)), clipRect.x);
+        int y0 = max(int(floor(polyMin.y)), clipRect.y);
+        int x1 = min(int(ceil (polyMax.x)), clipRect.z);
+        int y1 = min(int(ceil (polyMax.y)), clipRect.w);
+
+        float halfHD_p = max(MIN_SUPERCOVER_HD,
+                             SUPERCOVER_HALF_SAT * pc.scaleMax);
+        float thrSq_p = halfHD_p * halfHD_p;
+
+        for (int y = y0 + int(gl_LocalInvocationID.y);
+             y < y1; y += int(gl_WorkGroupSize.y)) {
+            for (int x = x0 + int(gl_LocalInvocationID.x);
+                 x < x1; x += int(gl_WorkGroupSize.x)) {
+                if (x < 0 || y < 0) continue;
+                if (x > c.systemClip.x || y > c.systemClip.y) continue;
+                if (x >= int(pc.fbWidth) || y >= int(pc.fbHeight)) continue;
+                if (c.clipMode == 1u) {
+                    if (x < c.userClip.x || x > c.userClip.z ||
+                        y < c.userClip.y || y > c.userClip.w) continue;
+                } else if (c.clipMode == 2u) {
+                    if (x >= c.userClip.x && x <= c.userClip.z &&
+                        y >= c.userClip.y && y <= c.userClip.w) continue;
+                }
+
+                vec2 pTest = vec2(float(x) + 0.5, float(y) + 0.5);
+                if (!insidePolygonOrOnEdge(pTest,
+                                           vec2(c.v0), vec2(c.v1),
+                                           vec2(c.v2), vec2(c.v3),
+                                           thrSq_p)) continue;
+
+                ivec2 imgPix = ivec2(x, int(pc.fbHeight) - 1 - y);
+                if (needsDst) {
+                    vec4 dst = imageLoad(fb, imgPix);
+                    vec4 result = applyBlend(src, dst, c.pmod, ivec2(x, y));
+                    imageStore(fb, imgPix, result);
+                } else {
+                    vec4 result;
+                    if (applyBlendNoDst(result, src, c.pmod, ivec2(x, y))) {
+                        imageStore(fb, imgPix, result);
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    // Phase 1B.1: full color mode cascade (cm 0..5). Per-texel sample functions
+    // mirror tile_shade.comp but take a uvec2 texel index instead of vec2 uv.
+    // End-code / SPCTL bit 5 / shadow / LUT sprite-type attrs are deferred to
+    // later 1B sub-tasks; this step covers basic color decode + spd
+    // transparency for all 6 modes so non-4bpp-Bank sprites stop being
+    // skipped silently.
+    uint cm = (c.pmod >> 3) & 7u;
+    bool spd = (c.pmod & 0x40u) != 0u;
+    // CMDPMOD bit 7 (ECD): CLEAR = end-code processing ENABLED.
+    bool endcEnabled = (c.pmod & 0x80u) == 0u;
+
+    // Axis-aligned, integer-aligned rectangle detection. Used to pick
+    // both the BR extension formula and whether the SPRITE supercover
+    // band applies. Saturn HW Bresenham doesn't fatten axis-aligned
+    // edges (no error term to walk), and the step lattice fits the
+    // dest exactly when the extension is a whole Saturn cell, so band
+    // is skipped on these sprites to avoid 1-px overdraw on each side.
+    bool axisAligned = (c.v0.y == c.v1.y) && (c.v3.y == c.v2.y)
+                    && (c.v0.x == c.v3.x) && (c.v1.x == c.v2.x);
+
+    // Cell-inclusive BR vertex extension for DISTORTED_SPRITE.
+    //
+    // Saturn raw distorted-sprite verts encode v0..v3 as INCLUSIVE
+    // endpoints — v1/v2/v3 sit at the START of the last Saturn screen
+    // cell, not the exclusive end. To cover the last cell, BR verts
+    // must extrapolate.
+    //
+    // Two extension formulas, picked by axisAligned:
+    //
+    // 1. axis-aligned (axisAligned == true): extend by exactly
+    //    `sign(edge) * scaleMax` per axis = 1 Saturn screen cell.
+    //    This always covers the terminal Saturn cell regardless of
+    //    texture / dest size mismatch. Required for shrunk axis-
+    //    aligned sprites (cmd 3: 64x32 texture mapped to 28 fb-px
+    //    tall, lattice step = 0.9 fb-px would only extend to fb
+    //    y=800.9, leaving Saturn cell at y=200 fb 801..803 unpainted
+    //    and creating a 3-fb-px gap before the next axis-aligned
+    //    sprite cmd 4 starting at fb y=804). For non-shrunk axis-
+    //    aligned (cmd 145: 128x32 at scaleMax=4) sign*scaleMax = 4 =
+    //    edge/(charSize-1) so the formulas agree.
+    //
+    // 2. non-axis-aligned (rotated / sheared / sub-pixel): extend by
+    //    `edge / (charSize - 1)` = "1 step on the sprite's own
+    //    lattice". Scales with the sprite's orientation. cmd 46
+    //    (16x47 rotated): step ≈ 0.4 fb-px, the SPRITE supercover
+    //    band (still active on non-axis-aligned) catches Saturn HW
+    //    Bresenham edge fattening. Using sign*scaleMax here would
+    //    overdraw rotated sprites past their intended footprint
+    //    (cmd 46 painted x=473+ at scaleMax=4 with the old fixed
+    //    formula).
+    //
+    // NORMAL/SCALED_SPRITE: host pre-extends v1.x = v0.x + W*scale
+    // so v1 is the EXCLUSIVE endpoint; no extension applied here.
+    // POLYGON: 1x1 virtual texel, separate cmax dilation per-texel.
+    vec2 v0e = vec2(c.v0);
+    vec2 v1e = vec2(c.v1);
+    vec2 v2e = vec2(c.v2);
+    vec2 v3e = vec2(c.v3);
+    if (c.cmdType == TYPE_DISTORTED_SPRITE) {
+        if (axisAligned) {
+            // Saturn-cell-inclusive: last screen cell sits at max(v.x) /
+            // max(v.y) regardless of winding. Always extend +X / +Y in
+            // screen space. Previously used sign(v1.x - v0.x) * scaleX
+            // which inverted for 2-point scaled sprites with CMDXC<CMDXA
+            // (flipped) and pushed coverage onto the wrong edge.
+            // Per-axis degenerate fallback: NormalSprite w==1 / h==1
+            // collapses all 4 corners onto the same coord on that axis
+            // under cell-inclusive vertex convention. The max-based
+            // check would flag all 4 corners as the +X / +Y edge and
+            // extend them together, leaving the quad degenerate
+            // (TRI_SPLIT path then writes nothing because both
+            // triangles have zero area). Fall back to the TL/TR/BR/BL
+            // vertex-order convention (v1,v2 = +X; v2,v3 = +Y) on the
+            // degenerate axis only.
+            int minXi = min(min(c.v0.x, c.v1.x), min(c.v2.x, c.v3.x));
+            int maxXi = max(max(c.v0.x, c.v1.x), max(c.v2.x, c.v3.x));
+            int minYi = min(min(c.v0.y, c.v1.y), min(c.v2.y, c.v3.y));
+            int maxYi = max(max(c.v0.y, c.v1.y), max(c.v2.y, c.v3.y));
+            if (minXi < maxXi) {
+                if (c.v0.x == maxXi) v0e.x = float(c.v0.x) + pc.scaleX;
+                if (c.v1.x == maxXi) v1e.x = float(c.v1.x) + pc.scaleX;
+                if (c.v2.x == maxXi) v2e.x = float(c.v2.x) + pc.scaleX;
+                if (c.v3.x == maxXi) v3e.x = float(c.v3.x) + pc.scaleX;
+            } else {
+                v1e.x = float(c.v1.x) + pc.scaleX;
+                v2e.x = float(c.v2.x) + pc.scaleX;
+            }
+            if (minYi < maxYi) {
+                if (c.v0.y == maxYi) v0e.y = float(c.v0.y) + pc.scaleY;
+                if (c.v1.y == maxYi) v1e.y = float(c.v1.y) + pc.scaleY;
+                if (c.v2.y == maxYi) v2e.y = float(c.v2.y) + pc.scaleY;
+                if (c.v3.y == maxYi) v3e.y = float(c.v3.y) + pc.scaleY;
+            } else {
+                v2e.y = float(c.v2.y) + pc.scaleY;
+                v3e.y = float(c.v3.y) + pc.scaleY;
+            }
+        } else if (effCharSize.x > 1u && effCharSize.y > 1u) {
+            // Non-axis-aligned: per-texel edge step needs divX/divY > 0.
+            // charSize 1xN / Nx1 rotated distorted sprite would be a
+            // mathematical strip; rare in Saturn content and skipped.
+            float divX = float(effCharSize.x - 1u);
+            float divY = float(effCharSize.y - 1u);
+            vec2 step_top   = (vec2(c.v1) - vec2(c.v0)) / divX;
+            vec2 step_bot   = (vec2(c.v2) - vec2(c.v3)) / divX;
+            vec2 step_left  = (vec2(c.v3) - vec2(c.v0)) / divY;
+            vec2 step_right = (vec2(c.v2) - vec2(c.v1)) / divY;
+            v1e = vec2(c.v1) + step_top;
+            v3e = vec2(c.v3) + step_left;
+            v2e = vec2(c.v2) + step_bot + step_right;
+            // Raw vertex collapse preservation for non-axis-aligned
+            // triangle-as-quad encoding (axis-aligned with a collapse
+            // would degenerate to a line; not handled here). Saturn
+            // distorted-sprite triangles set v2==v3 or v1==v2; the
+            // matching step is 0 but adjacent steps still separate
+            // the BR-corner v?e by ~step magnitude. Strict per-texel
+            // quad coverage then draws sliver pixels past the
+            // collapsed apex (cmd 56 v2==v3 → bottom-row texels
+            // paint around the (D=C) corner). Snap collapsed pairs
+            // back to raw.
+            // (v0==v1 / v0==v3 cases self-preserve since step_top /
+            // step_left are 0 when the originating edge is zero-
+            // length, so v0e/v1e and v0e/v3e are coincident
+            // automatically.)
+            if (c.v2.x == c.v3.x && c.v2.y == c.v3.y) {
+                v2e = vec2(c.v2);
+                v3e = vec2(c.v3);
+            }
+            if (c.v1.x == c.v2.x && c.v1.y == c.v2.y) {
+                v1e = vec2(c.v1);
+                v2e = vec2(c.v2);
+            }
+        }
+    }
+
+    uint u = 0u;
+    uint v = 0u;
+    vec2 p00 = vec2(0.0);
+    vec2 p10 = vec2(0.0);
+    vec2 p01 = vec2(0.0);
+    vec2 p11 = vec2(0.0);
+    vec2 cmin = vec2(0.0);
+    vec2 cmax = vec2(0.0);
+    vec2 thinMin = min(min(vec2(c.v0), v1e), min(v2e, v3e));
+    vec2 thinMax = max(max(vec2(c.v0), v1e), max(v2e, v3e));
+    float thinHalfHD = max(MIN_SUPERCOVER_HD,
+                           THIN_SUPERCOVER_HALF_SAT * pc.scaleMax);
+
+    if ((c.flags & FLAG_THIN) != 0u && !isPolygon) {
+        int x0 = max(int(floor(thinMin.x - thinHalfHD)), clipRect.x);
+        int y0 = max(int(floor(thinMin.y - thinHalfHD)), clipRect.y);
+        int x1 = min(int(ceil (thinMax.x + thinHalfHD)), clipRect.z);
+        int y1 = min(int(ceil (thinMax.y + thinHalfHD)), clipRect.w);
+
+        for (int y = y0 + int(gl_LocalInvocationID.y);
+             y < y1; y += int(gl_WorkGroupSize.y)) {
+            for (int x = x0 + int(gl_LocalInvocationID.x);
+                 x < x1; x += int(gl_WorkGroupSize.x)) {
+                if (x < 0 || y < 0) continue;
+                if (x > c.systemClip.x || y > c.systemClip.y) continue;
+                if (x >= int(pc.fbWidth) || y >= int(pc.fbHeight)) continue;
+                if (c.clipMode == 1u) {
+                    if (x < c.userClip.x || x > c.userClip.z ||
+                        y < c.userClip.y || y > c.userClip.w) continue;
+                } else if (c.clipMode == 2u) {
+                    if (x >= c.userClip.x && x <= c.userClip.z &&
+                        y >= c.userClip.y && y <= c.userClip.w) continue;
+                }
+
+                vec2 pTest = vec2(float(x) + 0.5, float(y) + 0.5);
+                float thrSq_t = thinHalfHD * thinHalfHD;
+                if (!insidePolygonOrOnEdge(pTest, v0e, v1e, v2e, v3e, thrSq_t)) continue;
+
+                vec2 pixelUv = computeUV(pTest, c);
+                uvec2 t = uvec2(
+                    uint(clamp(int(floor(pixelUv.x * float(effCharSize.x))),
+                               0, int(effCharSize.x) - 1)),
+                    uint(clamp(int(floor(pixelUv.y * float(effCharSize.y))),
+                               0, int(effCharSize.y) - 1))
+                );
+                if ((c.flip & 1u) != 0u) t.x = effCharSize.x - 1u - t.x;
+                if ((c.flip & 2u) != 0u) t.y = effCharSize.y - 1u - t.y;
+
+                vec4 src;
+                if (cm == 0u) src = sampleTexel4bppBank(c, t, c.color & 0xFFF0u, spd, endcEnabled);
+                else if (cm == 1u) src = sampleTexel4bppLut (c, t, c.color * 8u,      spd, endcEnabled);
+                else if (cm == 2u) src = sampleTexel8bppBank(c, t, c.color & 0xFFC0u, 0x3Fu, spd, endcEnabled);
+                else if (cm == 3u) src = sampleTexel8bppBank(c, t, c.color & 0xFF80u, 0x7Fu, spd, endcEnabled);
+                else if (cm == 4u) src = sampleTexel8bppBank(c, t, c.color & 0xFF00u, 0xFFu, spd, endcEnabled);
+                else if (cm == 5u) src = sampleTexel16bppRGB(c, t, spd, endcEnabled);
+                else continue;
+                if (src.a < 0.5) continue;
+
+                vec4 finalSrc = src;
+                if (c.gouraudAddr.y != 0u) {
+                    finalSrc.rgb = applyGouraud(finalSrc.rgb, pixelUv, c);
+                }
+
+                ivec2 imgPix = ivec2(x, int(pc.fbHeight) - 1 - y);
+                if (needsDst) {
+                    vec4 dst = imageLoad(fb, imgPix);
+                    vec4 result = applyBlend(finalSrc, dst, c.pmod, ivec2(x, y));
+                    imageStore(fb, imgPix, result);
+                } else {
+                    vec4 result;
+                    if (applyBlendNoDst(result, finalSrc, c.pmod, ivec2(x, y))) {
+                        imageStore(fb, imgPix, result);
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    // Process the entire texel grid. With local_size 8x8, charSize > 8
+    // cmds need an outer tiling loop so 16x16 / 32x16 / etc. are all
+    // covered by the one workgroup.
+    for (uint vBase = 0u; vBase < effCharSize.y; vBase += gl_WorkGroupSize.y) {
+        for (uint uBase = 0u; uBase < effCharSize.x; uBase += gl_WorkGroupSize.x) {
+            u = uBase + gl_LocalInvocationID.x;
+            v = vBase + gl_LocalInvocationID.y;
+            if (u >= effCharSize.x || v >= effCharSize.y) continue;
+
+            // Cell-inclusive lerp parameters: texel u/v covers the screen
+            // range corresponding to t in [u/W, (u+1)/W] x [v/H, (v+1)/H].
+            // This is the core of the "no-gimmick" approach -- the +1
+            // emerges naturally from cellsW = max - min + 1 = charSize.
+            float ty0 = float(v) / float(effCharSize.y);
+            float ty1 = float(v + 1u) / float(effCharSize.y);
+            float tx0 = float(u) / float(effCharSize.x);
+            float tx1 = float(u + 1u) / float(effCharSize.x);
+
+            vec2 left0  = mix(v0e, v3e, ty0);
+            vec2 right0 = mix(v1e, v2e, ty0);
+            vec2 left1  = mix(v0e, v3e, ty1);
+            vec2 right1 = mix(v1e, v2e, ty1);
+
+            p00 = mix(left0, right0, tx0);
+            p10 = mix(left0, right0, tx1);
+            p01 = mix(left1, right1, tx0);
+            p11 = mix(left1, right1, tx1);
+
+            // Axis-aligned bounding rect of this texel's screen footprint.
+            // For axis-aligned polygons this is exactly the SxS HD block.
+            // For rotated/distorted polygons it's an over-approximation
+            // (the bounding rect of the rotated quad), which Phase 1B
+            // refines with proper coverage tests.
+            cmin = min(min(p00, p10), min(p01, p11));
+            cmax = max(max(p00, p10), max(p01, p11));
+
+            // POLYGON cell-inclusive bbox extension (Issue #5). With raw
+            // Saturn verts (effCharSize = 1×1), cmax = max of v0..v3 which
+            // lands ON the BR vertex, dropping the cell at v_max under the
+            // exclusive sweep. Extend by scaleMax HD pixels (= 1 Saturn
+            // cell) so the sweep reaches into the BR cell. insidePolygon-
+            // OrOnEdge gates per-pixel coverage to the actual polygon
+            // shape so the bbox over-extension does not leak.
+            if (isPolygon) {
+                cmax += vec2(max(1.0, pc.scaleMax));
+            }
+            // FLAG_THIN cover_rect 膨張 — POLYGON / SPRITE 共通。
+            //   POLYGON: edge supercover band (halfHD 外側) を pixel scan
+            //     [floor(cmin), ceil(cmax)) に取り込み、band 部分の pixel
+            //     を iteration から落とさない。
+            //   SPRITE: scan range だけ広げる。実際に描く texel は pixel
+            //     center の inverse mapping から一意に決めるので、隣接
+            //     texel の重ね書きで画像が壊れない。
+            if ((c.flags & FLAG_THIN) != 0u) {
+                cmin -= vec2(thinHalfHD);
+                cmax += vec2(thinHalfHD);
+            }
+
+            // Saturn Bresenham-style edge fattening for SPRITE (Plan B).
+            // 回転 / distorted sprite で polygon outer edge が sub-pixel 位置
+            // (例: 左 edge x=224.6) を取ったとき、pixel center (224.5) が
+            // 0.1 fb-px だけ外側に来る。strict per-texel quad coverage では
+            // この pixel は drop され「edge band 1px が背景になる」という
+            // hole として観察される (cmd 42, RES_2x で 224x197 が該当)。
+            //
+            // 実機 Saturn は polygon edge を Bresenham edge-walker で歩き、
+            // 各 scanline で必ず 1 pixel 描画 → 0.5 Saturn-px 以内の near-edge
+            // は強制的に塗られる。これを再現するため、polygon の OUTER 周
+            // (= u=0/W-1 / v=0/H-1 の edge texel が触れる side) に halfHD_o
+            // = 0.5 fb-px の supercover band を適用する。
+            //
+            // Interior texel は対象外 — per-texel quad coverage が polygon
+            // body を gap-free で tile しているので band 不要。Edge texel
+            // のみ拡張すれば multi-claim もほぼ起きない (隣 texel の同 side
+            // outer-edge から halfHD_o > 1 cell 離れるので claim 競合なし)。
+            //
+            // Band = 0.5 fb-px constant (scaleMax にかかわらず固定)。
+            //   - cmd 42 の 0.094 fb-px 外 pixel: 確実に catch
+            //   - 隣接 texel (0.6+ fb-px 離れた左 edge): catch しない
+            //     → single-claim 保証
+            //   - axis-aligned で pixel center が edge から 0.5 fb-px の場合
+            //     0.5 == 0.5 で inclusive に catch するため 1 px fattening が
+            //     起きる (= Saturn Bresenham と一致する仕様準拠の挙動)
+            const float EDGE_BAND_HD = 0.5;
+            bool isLeftEdgeTexel  = (u == 0u);
+            bool isRightEdgeTexel = (u == effCharSize.x - 1u);
+            bool isTopEdgeTexel   = (v == 0u);
+            bool isBotEdgeTexel   = (v == effCharSize.y - 1u);
+            bool isEdgeTexel = isLeftEdgeTexel || isRightEdgeTexel
+                            || isTopEdgeTexel  || isBotEdgeTexel;
+            if (isEdgeTexel && !isPolygon && (c.flags & FLAG_THIN) == 0u && !axisAligned) {
+                cmin -= vec2(EDGE_BAND_HD);
+                cmax += vec2(EDGE_BAND_HD);
+            }
+
+            uvec2 t = uvec2(u, v);
+            // Texture flip applies to texel-side reading only (CMDCTRL bits 4-5).
+            // Saturn spec: "reverse character-pattern reading direction" - flip
+            // the texture, not the polygon shape. The screen position via lerp
+            // on v0..v3 stays unchanged; only the texel index for the sample
+            // is mirrored. For POLYGON (effCharSize=(1,1)) this is a no-op.
+            if ((c.flip & 1u) != 0u) t.x = effCharSize.x - 1u - t.x;
+            if ((c.flip & 2u) != 0u) t.y = effCharSize.y - 1u - t.y;
+            vec4 src;
+            if (isPolygon) {
+                // POLYGON: direct color from cmd.color (no texture sample, no
+                // spd, no end-code). CMDCOLR bit 15 set -> direct RGB; clear ->
+                // palette. No SPCTL gate -- this is Saturn POLYGON spec, which
+                // differs from sprite (where direct RGB is gated by SPCTL bit 5).
+                if (isShadowFor(c.color, c)) {
+                    src = packShadow(c);
+                } else if ((c.color & 0x8000u) != 0u) {
+                    src = packDirect(c.color, c);
+                } else {
+                    src = packPalette(c.color, c);
+                }
+            } else if (cm == 0u) src = sampleTexel4bppBank(c, t, c.color & 0xFFF0u, spd, endcEnabled);
+            else if (cm == 1u) src = sampleTexel4bppLut (c, t, c.color * 8u,      spd, endcEnabled);
+            else if (cm == 2u) src = sampleTexel8bppBank(c, t, c.color & 0xFFC0u, 0x3Fu, spd, endcEnabled);
+            else if (cm == 3u) src = sampleTexel8bppBank(c, t, c.color & 0xFF80u, 0x7Fu, spd, endcEnabled);
+            else if (cm == 4u) src = sampleTexel8bppBank(c, t, c.color & 0xFF00u, 0xFFu, spd, endcEnabled);
+            else if (cm == 5u) src = sampleTexel16bppRGB(c, t, spd, endcEnabled);
+            else continue;
+            if (src.a < 0.5) continue;
+
+            // Phase 1B.6: Gouraud shading (CMDPMOD bit 2 + cmd.gouraudAddr).
+            // Screen-space bilinear offset over the polygon's (s, t) - texel
+            // center is the natural per-texel sample point. Texture flip does
+            // NOT affect gouraud gradient (uses pre-flip uv = (u, v) before
+            // the c.flip mirror above). POLYGON path skipped here: the 1x1
+            // virtual texel maps the entire polygon to a single uv = (0.5,
+            // 0.5), so applying gouraud would give a uniform tint instead of
+            // a gradient. Per-pixel POLYGON gouraud needs the actual screen
+            // position projected back to (s, t) and is deferred.
+            if (!isPolygon) {
+                vec2 gouraudUv = vec2(
+                    (float(u) + 0.5) / float(effCharSize.x),
+                    (float(v) + 0.5) / float(effCharSize.y)
+                );
+                src.rgb = applyGouraud(src.rgb, gouraudUv, c);
+            }
+
+            // clipRect intersects with the texel's screen footprint so
+            // tile-bound dispatches skip pixels in other tiles up front.
+            int x0 = max(int(floor(cmin.x)), clipRect.x);
+            int y0 = max(int(floor(cmin.y)), clipRect.y);
+            int x1 = min(int(ceil(cmax.x)),  clipRect.z);
+            int y1 = min(int(ceil(cmax.y)),  clipRect.w);
+            for (int y = y0; y < y1; y++) {
+                for (int x = x0; x < x1; x++) {
+                    if (x < 0 || y < 0) continue;
+                    if (x > c.systemClip.x || y > c.systemClip.y) continue;
+                    if (x >= int(pc.fbWidth) || y >= int(pc.fbHeight)) continue;
+                    // User clip (CMDPMOD bit 10): clipMode 1 = inside-only,
+                    // 2 = outside-only.
+                    if (c.clipMode == 1u) {
+                        if (x < c.userClip.x || x > c.userClip.z ||
+                            y < c.userClip.y || y > c.userClip.w) continue;
+                    } else if (c.clipMode == 2u) {
+                        if (x >= c.userClip.x && x <= c.userClip.z &&
+                            y >= c.userClip.y && y <= c.userClip.w) continue;
+                    }
+                    // POLYGON-only: cover_rect is the bbox of the 4 vertices
+                    // (1x1 virtual texel covers the full polygon), so for
+                    // triangles (v3 == v0) and non-rectangular quads the
+                    // bbox over-fills outside the actual shape. Cull pixels
+                    // outside the polygon via 2-triangle decomposition.
+                    // SPRITE doesn't need this: per-texel cover_rect is a
+                    // tiny sub-region built by lerp on v0..v3 and stays
+                    // inside the polygon by construction.
+                    // Inside-test:
+                    //   POLYGON: 既存通り常に適用 (1×1 virtual texel から
+                    //     bbox 全部 emit するため、polygon 形状外の pixel を
+                    //     落とす必要)。
+                    //   SPRITE: 下の branch で per-texel coverage を見る。
+                    // 検査多角形は extended verts (v0e..v3e) を使う —
+                    // POLYGON では raw と同値、DISTORTED_SPRITE では BR
+                    // 拡張済み polygon と一致するので band がそのまま反映。
+                    bool wantInside = isPolygon;
+                    if (wantInside) {
+                        vec2 pTest = vec2(float(x) + 0.5, float(y) + 0.5);
+                        float halfHD_p = max(MIN_SUPERCOVER_HD,
+                                             SUPERCOVER_HALF_SAT * pc.scaleMax);
+                        float thrSq_p = halfHD_p * halfHD_p;
+                        if (!insidePolygonOrOnEdge(pTest,
+                                                   v0e, v1e, v2e, v3e,
+                                                   thrSq_p)) continue;
+                    } else if (!isPolygon) {
+                        // Per-texel quad coverage (Plan A smoothing) +
+                        // edge-texel supercover band (Plan B fattening).
+                        //
+                        // Strict inside-test: pixel center inside the rotated
+                        // texel parallelogram. Adjacent texels share edges
+                        // exactly by construction (same lerp on v0e..v3e),
+                        // so interior pixels tile gap-free.
+                        //
+                        // Edge-texel band: when this texel is on the polygon
+                        // outer perimeter (u/v at boundary), also accept
+                        // pixels within EDGE_BAND_HD fb-px of the relevant
+                        // outer polygon edge. Mirrors Saturn Bresenham edge-
+                        // walker which fills 1 px per scanline even at sub-
+                        // pixel-rotated edges. Without this, cmd 42 RES_2x
+                        // shows a 1-px hole band along the rotated left edge
+                        // (e.g. pixel (224.5,197.5) is 0.094 fb-px outside
+                        // the strict edge → drops without the band).
+                        //
+                        // Multi-claim avoidance: only the texel whose own
+                        // outer edge is closest to the band pixel claims
+                        // it. Adjacent same-row/column texels' outer edges
+                        // are >1 fb-px away, so band=0.5 keeps single-claim.
+                        //
+                        vec2 pTest = vec2(float(x) + 0.5, float(y) + 0.5);
+                        bool insideTex = insidePolygonQuad(pTest, p00, p10, p11, p01);
+                        if (!insideTex && isEdgeTexel && !axisAligned) {
+                            float thrSq_o = EDGE_BAND_HD * EDGE_BAND_HD;
+                            // Each edge texel checks the polygon outer edge(s)
+                            // it touches. v0e..v3e are the extended polygon
+                            // vertices (matches the texel-side lerp anchors).
+                            if (isLeftEdgeTexel  && isOnSegment(pTest, vec2(c.v0), v3e, thrSq_o)) insideTex = true;
+                            if (!insideTex && isRightEdgeTexel && isOnSegment(pTest, v1e, v2e, thrSq_o)) insideTex = true;
+                            if (!insideTex && isTopEdgeTexel   && isOnSegment(pTest, vec2(c.v0), v1e, thrSq_o)) insideTex = true;
+                            if (!insideTex && isBotEdgeTexel   && isOnSegment(pTest, v3e, v2e, thrSq_o)) insideTex = true;
+                        }
+                        if (!insideTex) continue;
+                    }
+                    // T1B.11: per-pixel POLYGON Gouraud. The 1x1 virtual
+                    // texel collapses sprite-path per-texel gouraudUv to a
+                    // uniform (0.5, 0.5), so for POLYGON we solve inverse-
+                    // bilinear at the actual pixel center to get the real
+                    // (s, t) the 4-vertex gouraud table is parameterized
+                    // over. SPRITE keeps its existing per-texel path
+                    // (each texel covers ~1 cell, so per-pixel diff is
+                    // negligible).
+                    vec4 finalSrc = src;
+                    if (isPolygon && c.gouraudAddr.y != 0u) {
+                        vec2 polyUv = computeUV(
+                            vec2(float(x) + 0.5, float(y) + 0.5), c);
+                        finalSrc.rgb = applyGouraud(finalSrc.rgb, polyUv, c);
+                    }
+                    // Y-flip for image storage — matches tile_shade and
+                    // scanline shader convention (Saturn coord y=0 at top,
+                    // Vulkan image y=0 at bottom in our offscreen RT).
+                    ivec2 imgPix = ivec2(x, int(pc.fbHeight) - 1 - y);
+                    // Phase 1B.7: RMW for CMDPMOD blend mode (Replace /
+                    // Shadow / Half-lum / Half-trans) + Mesh + MSB shadow.
+                    // applyBlend takes Saturn-space pix (x, y) for mesh
+                    // checker; imgPix is the y-flipped storage coord.
+                    //
+                    // pmod-aware imageLoad: needsDst=false (cc==0/2) で
+                    // imageLoad を省略。mesh は applyBlendNoDst が false
+                    // を返したら imageStore も skip。
+                    if (needsDst) {
+                        vec4 dst = imageLoad(fb, imgPix);
+                        vec4 result = applyBlend(finalSrc, dst, c.pmod, ivec2(x, y));
+                        imageStore(fb, imgPix, result);
+                    } else {
+                        vec4 result;
+                        if (applyBlendNoDst(result, finalSrc, c.pmod, ivec2(x, y))) {
+                            imageStore(fb, imgPix, result);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// =============================================================================
+// Entry points. TILE_MODE compile flag selects:
+//   undefined : per-cmd dispatch (cmdIndex + WorkGroupID.x → cmdIdx).
+//   defined   : per-tile dispatch (one workgroup per 16×16 px tile, walk the
+//               tile's cmd list in submission order with intra-workgroup
+//               memoryBarrierImage()/barrier() between cmds).
+// =============================================================================
+#ifdef TILE_MODE
+
+void main() {
+    uvec2 tileXY = gl_WorkGroupID.xy;
+    int tileMinX = int(tileXY.x) * int(pc.tileSize);
+    int tileMinY = int(tileXY.y) * int(pc.tileSize);
+    int tileMaxX = tileMinX + int(pc.tileSize);
+    int tileMaxY = tileMinY + int(pc.tileSize);
+
+    // Clamp to fb extent so far-right / bottom tiles that partially fall
+    // outside the framebuffer don't walk off-image.
+    tileMaxX = min(tileMaxX, int(pc.fbWidth));
+    tileMaxY = min(tileMaxY, int(pc.fbHeight));
+    ivec4 clipRect = ivec4(tileMinX, tileMinY, tileMaxX, tileMaxY);
+
+    uint tileIdx = tileXY.y * pc.numTilesX + tileXY.x;
+    uint lid     = gl_LocalInvocationIndex;
+
+    // Phase 1: cooperatively load this tile's cmd indices into shared
+    // memory. Slot 0 reads the count first; everyone barriers; then each
+    // thread loads one slot.
+    if (lid == 0u) {
+        tileCmdCount_shared = min(tiles[tileIdx].count, uint(MAX_CMDS_PER_TILE));
+    }
+    barrier();
+    uint n = tileCmdCount_shared;
+    if (lid < n) {
+        sortedCmds[lid] = cmdIdx[tileIdx * uint(MAX_CMDS_PER_TILE) + lid];
+    }
+    barrier();
+
+    // Phase 2: insertion-sort the cmd ids ascending so LIFO order
+    // (cmd-submission order) is restored regardless of how Bin shader's
+    // atomicAdd raced to assign slots. Single-threaded sort: O(n^2) but
+    // n <= 64 so it stays cheap (worst case ~2K comparisons), and it
+    // matches tile_shade.comp byte-for-byte.
+    if (lid == 0u) {
+        for (uint i = 1u; i < n; ++i) {
+            uint key = sortedCmds[i];
+            uint j = i;
+            while (j > 0u && sortedCmds[j - 1u] > key) {
+                sortedCmds[j] = sortedCmds[j - 1u];
+                j--;
+            }
+            sortedCmds[j] = key;
+        }
+    }
+    barrier();
+
+    // Phase 3: walk cmds in submission order. Cross-cmd LIFO sync within
+    // workgroup uses groupMemoryBarrier() (workgroup-scope flush of all
+    // memory) + barrier() (wait for all threads). Cross-tile is unnecessary
+    // because tiles are pixel-disjoint, so we do NOT need device-scope
+    // memoryBarrierImage() — Adreno reportedly expands it to a UCHE/L1
+    // image cache flush per call, which costs ~50-200us per tile workgroup
+    // and dominates frame time at native res (300 tiles * cmds barriers).
+    for (uint ci = 0u; ci < n; ++ci) {
+        Vdp1Cmd c = cmds[sortedCmds[ci]];
+        processCmd(c, clipRect);
+        groupMemoryBarrier();
+        barrier();
+    }
+}
+
+#else  // !TILE_MODE — per-cmd dispatch
+
+void main() {
+    // Issue #1 + perf opt (2026-05-08): batch dispatch.
+    //
+    // host 側で連続する cmd の bbox を greedy union 化し、互いに非重なりの
+    // cmd 群を 1 batch にまとめる。1 batch = 1 dispatch (workgroupCount =
+    // batchSize) で、shader はこの workgroup の cmdIdx を pc.cmdIndex
+    // (batch 先頭) + gl_WorkGroupID.x (batch 内 offset) で算出する。
+    //
+    // 旧 per-cmd dispatch は cmd 提出順保証のため毎 cmd 後に memory barrier
+    // を入れていたが、非重なり cmd は互いに pixel を共有しないため、batch
+    // 内では順序未定義でも視覚的に等価 (Saturn LIFO の last-write-wins が
+    // pixel-disjoint 集合では発火しない)。batch 間にのみ barrier を入れる。
+    uint cmdIdx = pc.cmdIndex + gl_WorkGroupID.x;
+    Vdp1Cmd c = cmds[cmdIdx];
+    ivec4 fullScreen = ivec4(0, 0, int(pc.fbWidth), int(pc.fbHeight));
+    processCmd(c, fullScreen);
+}
+
+#endif

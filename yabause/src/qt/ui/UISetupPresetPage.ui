@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>UISetupPresetPage</class>
+ <widget class="QWizardPage" name="UISetupPresetPage">
+  <property name="geometry">
+   <rect><x>0</x><y>0</y><width>520</width><height>420</height></rect>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QRadioButton" name="rbHigh">
+     <property name="text"><string>High - modern high-end GPU and CPU</string></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="rbMiddle">
+     <property name="text"><string>Medium - mid-range GPU and CPU</string></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="rbLow">
+     <property name="text"><string>Low - older GPU and CPU</string></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="lUnavailable">
+     <property name="text"><string>Vulkan is not available in this build, so only the Low preset can be used.</string></property>
+     <property name="wordWrap"><bool>true</bool></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTableWidget" name="twDetails">
+     <property name="columnCount"><number>2</number></property>
+     <property name="selectionMode"><enum>QAbstractItemView::SelectionMode::NoSelection</enum></property>
+     <property name="editTriggers"><set>QAbstractItemView::EditTrigger::NoEditTriggers</set></property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

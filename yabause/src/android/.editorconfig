@@ -1,0 +1,76 @@
+# EditorConfig for YabaSanshiro Android project
+# https://editorconfig.org
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+max_line_length = 140
+trim_trailing_whitespace = true
+
+[*.{kt,kts}]
+# ktlint configuration
+# Increase max line length for Kotlin files
+max_line_length = 200
+
+
+# Disable filename rule for flexibility
+ktlint_standard_filename = disabled
+
+# Disable multiline expression wrapping (can cause issues with complex expressions)
+ktlint_standard_multiline-expression-wrapping = disabled
+
+# Disable string template wrapping
+ktlint_standard_string-template-indent = disabled
+
+# Disable function signature rule that causes formatting loops
+ktlint_standard_function-signature = disabled
+
+# Disable comment rules (block comment issues in license headers)
+ktlint_standard_comment-wrapping = disabled
+ktlint_standard_block-comment-initial-star-alignment = disabled
+ktlint_standard_comment-spacing = disabled
+ktlint_standard_discouraged-comment-location = disabled
+ktlint_standard_no-consecutive-comments = disabled
+
+# Disable if-else wrapping rule
+ktlint_standard_if-else-wrapping = disabled
+
+# Disable kdoc rules
+ktlint_standard_kdoc = disabled
+
+[**/src/test/**/*.kt]
+ktlint_standard_function-naming = disabled
+
+# Disable wildcard imports rule (common in Android/test development)
+ktlint_standard_no-wildcard-imports = disabled
+
+# Allow property names that don't follow standard naming (for test fixtures)
+ktlint_standard_property-naming = disabled
+ktlint_standard_backing-property-naming = disabled
+
+[**/src/androidTest/**/*.kt]
+ktlint_standard_function-naming = disabled
+# Disable wildcard imports rule (common in Android/test development)
+ktlint_standard_no-wildcard-imports = disabled
+
+# Allow property names that don't follow standard naming (for test fixtures)
+ktlint_standard_property-naming = disabled
+ktlint_standard_backing-property-naming = disabled
+
+# JNI files need snake_case function names to match native methods
+[**/YabauseRunnable.kt]
+ktlint_standard_function-naming = disabled
+
+[*.xml]
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.json]
+indent_size = 2

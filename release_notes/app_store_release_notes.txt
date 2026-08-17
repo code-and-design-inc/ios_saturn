@@ -1,0 +1,78 @@
+================================================================================
+App Store Release Notes - YabaSanshiro v1.20.37
+================================================================================
+
+[en] English
+--------------------------------------------------------------------------------
+Promotional Text:
+The ultimate Sega Saturn emulator! Fixes black screens, freezes, flicker and audio dropouts in Die Hard Trilogy, Panzer Dragoon Saga, Sonic 3D Blast and more.
+
+What's New:
+- DIE HARD TRILOGY / LAYER SECTION II: fixed the screen going completely black
+- PANZER DRAGOON SAGA / GUNGRIFFON II: fixed a freeze during gameplay
+- SONIC JAM: fixed low frame rate; ASTAL / STREET FIGHTER ALPHA 3: fixed flicker
+- SONIC 3D BLAST: fixed the opening movie stalling and characters hidden by the ground
+- Audio: fixed dropouts and crackling, and stabilized the frame rate at 60fps
+- MR. BONES: fixed characters not being drawn
+- Save states: fixed some data not being saved, improving reliability
+- Fixed the app becoming unresponsive when exiting a game
+
+[es] Spanish
+--------------------------------------------------------------------------------
+Promotional Text:
+¡El mejor emulador de Sega Saturn! Corrige pantallas negras, bloqueos, parpadeos y cortes de audio en Die Hard Trilogy, Panzer Dragoon Saga, Sonic 3D Blast y más.
+
+What's New:
+- DIE HARD TRILOGY / LAYER SECTION II: se corrigió la pantalla completamente negra
+- PANZER DRAGOON SAGA / GUNGRIFFON II: se corrigió un congelamiento durante el juego
+- SONIC JAM: baja tasa de cuadros; ASTAL / STREET FIGHTER ALPHA 3: parpadeo corregido
+- SONIC 3D BLAST: corregido el vídeo inicial que se detenía y los personajes ocultos por el suelo
+- Audio: corregidos cortes y chasquidos; velocidad estable a 60fps
+- MR. BONES: se corrigieron los personajes que no se mostraban
+- Estados de guardado: se corrigieron datos que no se guardaban; mayor fiabilidad
+- Se corrigió que la app dejara de responder al salir de un juego
+
+[pt-BR] Portuguese (Brazil)
+--------------------------------------------------------------------------------
+Promotional Text:
+O melhor emulador de Sega Saturn! Corrige telas pretas, travamentos, cintilação e falhas de áudio em Die Hard Trilogy, Panzer Dragoon Saga, Sonic 3D Blast e mais.
+
+What's New:
+- DIE HARD TRILOGY / LAYER SECTION II: corrigida a tela completamente preta
+- PANZER DRAGOON SAGA / GUNGRIFFON II: corrigido um travamento durante o jogo
+- SONIC JAM: baixa taxa de quadros; ASTAL / STREET FIGHTER ALPHA 3: cintilação corrigida
+- SONIC 3D BLAST: corrigido o vídeo inicial travando e personagens ocultos pelo chão
+- Áudio: corrigidos cortes e estalos; taxa de quadros estável em 60fps
+- MR. BONES: corrigidos os personagens que não eram exibidos
+- Estados de salvamento: corrigidos dados que não eram salvos; mais confiabilidade
+- Corrigido o app parar de responder ao sair de um jogo
+
+[zh-Hans] Chinese (Simplified)
+--------------------------------------------------------------------------------
+Promotional Text:
+体验终极世嘉土星模拟器！修复黑屏、冻结、画面闪烁与声音断续问题（虎胆龙威三部曲、AZEL 铁甲飞龙RPG、索尼克3D 等）。
+
+What's New:
+- DIE HARD TRILOGY / LAYER SECTION II：修复画面全黑的问题
+- PANZER DRAGOON SAGA / GUNGRIFFON II：修复游戏冻结的问题
+- SONIC JAM：修复帧率过低；ASTAL / STREET FIGHTER ALPHA 3：修复画面闪烁
+- SONIC 3D BLAST：修复开场动画卡住以及角色被地面遮挡的问题
+- 音频：修复声音断续与爆音，帧率稳定在 60fps
+- MR. BONES：修复角色不显示的问题
+- 即时存档：修复部分数据未保存的问题，提高可靠性
+- 修复退出游戏时应用无响应的问题
+
+[ja] Japanese
+--------------------------------------------------------------------------------
+Promotional Text:
+究極のセガサターンエミュレータ！黒画面やフリーズ、画面のちらつきに加え、音声の途切れとソニック3Dのムービー停止も修正しました。
+
+What's New:
+- 画面が真っ黒になる問題を修正 (ダイハード・トリロジー、レイヤーセクションII など)
+- アゼル -パンツァードラグーンRPG- / ガングリフォン II がフリーズする問題を修正
+- ソニックジャムのフレームレート低下と画面のちらつき (アスタル、ストリートファイターZERO3 など) を修正
+- ソニック3Dブラストのオープニングムービーが止まる問題とキャラクターが地面に隠れる問題を修正
+- 音声の途切れやプチプチというノイズを修正し、フレームレートを 60fps で安定化
+- どこでもセーブの保存漏れを修正し信頼性を向上
+- ミスター・ボーンズ などでキャラクターが表示されない問題を修正
+- ゲーム終了時にアプリが応答しなくなる問題を修正

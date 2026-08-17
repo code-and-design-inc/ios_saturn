@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tag IDs for storing original values -->
+    <item name="original_text_color" type="id" />
+</resources>

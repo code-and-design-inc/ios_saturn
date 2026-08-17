@@ -1,0 +1,111 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "2x" : {
+      "comment" : "Resolution option for 2 times the native resolution"
+    },
+    "4Mbit BackupRam" : {
+      "comment" : "4 megabit backup RAM"
+    },
+    "4x" : {
+      "comment" : "Resolution option for 4 times the native resolution"
+    },
+    "8Mbit BackupRam" : {
+      "comment" : "8 megabit backup RAM"
+    },
+    "8Mbit DRAM" : {
+      "comment" : "8 megabit DRAM"
+    },
+    "16Mbit BackupRam" : {
+      "comment" : "16 megabit backup RAM"
+    },
+    "32Mbit BackupRam" : {
+      "comment" : "32 megabit backup RAM"
+    },
+    "32Mbit DRAM" : {
+      "comment" : "32 megabit DRAM"
+    },
+    "Analog Mode" : {
+      "comment" : "Switch to analog mode"
+    },
+    "Are you sure you want to exit?" : {
+      "comment" : "Message asking if the user is sure about exiting"
+    },
+    "Cancel" : {
+      "comment" : "Action to cancel the key remapping\nButton title to cancel the upgrade action"
+    },
+    "Change Disk" : {
+      "comment" : "Change the game disk"
+    },
+    "Error" : {
+      "comment" : "Title for the error alert"
+    },
+    "Exit" : {
+      "comment" : "Exit the application"
+    },
+    "Exit Confirmation" : {
+      "comment" : "Title for exit confirmation alert"
+    },
+    "Fail to open" : {
+      "comment" : "Title for the alert when a file fails to open"
+    },
+    "Game Controller" : {
+      "comment" : "Game controller settings"
+    },
+    "High Quality but slow" : {
+      "comment" : "Sound option for high quality but slower performance"
+    },
+    "Load State" : {
+      "comment" : "Load a previously saved game state"
+    },
+    "Low Quality but fast" : {
+      "comment" : "Sound option for lower quality but faster performance"
+    },
+    "Native" : {
+      "comment" : "Resolution option for native resolution"
+    },
+    "No" : {
+      "comment" : "Cancel the exit action"
+    },
+    "None" : {
+      "comment" : "No backup RAM"
+    },
+    "OK" : {
+      "comment" : "Default action button title"
+    },
+    "Original" : {
+      "comment" : "Resolution option for original resolution"
+    },
+    "Press a button to map the [%@] key" : {
+      "comment" : "Message prompting user to press a button to map a key"
+    },
+    "Remap Key" : {
+      "comment" : "Title for remapping a key"
+    },
+    "Reset" : {
+      "comment" : "Reset the game"
+    },
+    "Save State" : {
+      "comment" : "Save the current state of the game"
+    },
+    "Unbind" : {
+      "comment" : "Action to unbind the current key"
+    },
+    "Upgrade" : {
+      "comment" : "Button title to upgrade to the paid version"
+    },
+    "Upgrade Required" : {
+      "comment" : "Title for the upgrade alert"
+    },
+    "Yes" : {
+      "comment" : "Confirm action to exit the application"
+    },
+    "You can select chd or bin or cue" : {
+      "comment" : "Message indicating the supported file formats"
+    },
+    "You have reached the maximum number of files for the free version. Please upgrade to the paid version to add more files." : {
+      "comment" : "Message indicating that the user needs to upgrade to the paid version to add more files."
+    }
+  },
+  "version" : "1.0"
+}

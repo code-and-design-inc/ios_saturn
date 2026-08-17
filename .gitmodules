@@ -1,0 +1,9 @@
+[submodule "ext/eigen"]
+	path = yabause/src/retro_arena/nanogui-sdl/ext/eigen
+	url = https://github.com/libigl/eigen.git
+[submodule "yabause/src/android/oboe"]
+	path = yabause/src/android/oboe
+	url = https://github.com/google/oboe
+[submodule "yabause/src/retroachievements/rcheevos"]
+	path = yabause/src/retroachievements/rcheevos
+	url = https://github.com/RetroAchievements/rcheevos.git

@@ -1,0 +1,110 @@
+<en-US>
+- DIE HARD TRILOGY / LAYER SECTION II: fixed the fully black screen
+- PANZER DRAGOON SAGA / GUNGRIFFON II: fixed an in-game freeze
+- SONIC JAM: low frame rate; ASTAL / STREET FIGHTER ALPHA 3: flicker - fixed
+- SONIC 3D BLAST: fixed the stalling intro and characters hidden by the ground
+- Audio: fixed dropouts and crackling; frame rate now steady at 60fps
+- MR. BONES: fixed missing characters
+- Save states: fixed missing data; more reliable
+- Fixed the app hanging when exiting a game
+</en-US>
+<de-DE>
+- DIE HARD TRILOGY / LAYER SECTION II: Schwarzes Bild behoben
+- PANZER DRAGOON SAGA / GUNGRIFFON II: Einfrieren im Spiel behoben
+- SONIC JAM: Niedrige Bildrate; ASTAL / STREET FIGHTER ALPHA 3: Flackern behoben
+- SONIC 3D BLAST: Stockendes Intro und verdeckte Figuren behoben
+- Audio: Aussetzer und Knistern behoben, Bildrate stabil bei 60fps
+- MR. BONES: Nicht angezeigte Figuren behoben
+- Spielstände: Fehlende Daten werden nun gespeichert
+- App-Hänger beim Beenden eines Spiels behoben
+</de-DE>
+<es-419>
+- DIE HARD TRILOGY / LAYER SECTION II: pantalla negra corregida
+- PANZER DRAGOON SAGA / GUNGRIFFON II: bloqueo corregido
+- SONIC JAM: baja tasa de cuadros; ASTAL / STREET FIGHTER ALPHA 3: parpadeo
+- SONIC 3D BLAST: intro detenida y personajes ocultos por el suelo - corregido
+- Audio: cortes y chasquidos corregidos; 60fps estable
+- MR. BONES: personajes que no se mostraban - corregido
+- Guardados de estado: más fiables
+- La app dejaba de responder al salir de un juego - corregido
+</es-419>
+<es-ES>
+- DIE HARD TRILOGY / LAYER SECTION II: pantalla negra corregida
+- PANZER DRAGOON SAGA / GUNGRIFFON II: bloqueo corregido
+- SONIC JAM: baja tasa de fotogramas; ASTAL / STREET FIGHTER ALPHA 3: parpadeo
+- SONIC 3D BLAST: intro detenida y personajes ocultos por el suelo - corregido
+- Audio: cortes y chasquidos corregidos; 60fps estable
+- MR. BONES: personajes que no se mostraban - corregido
+- Estados de guardado: más fiables
+- La app dejaba de responder al salir de un juego - corregido
+</es-ES>
+<fr-FR>
+- DIE HARD TRILOGY / LAYER SECTION II : écran totalement noir corrigé
+- PANZER DRAGOON SAGA / GUNGRIFFON II : blocage en jeu corrigé
+- SONIC JAM : ralentissements ; ASTAL / STREET FIGHTER ALPHA 3 : scintillement
+- SONIC 3D BLAST : intro figée et personnages cachés par le sol - corrigé
+- Audio : coupures et craquements corrigés, 60 fps stabilisé
+- MR. BONES : personnages non affichés - corrigé
+- Sauvegardes d'état plus fiables
+- Appli qui ne répondait plus en quittant un jeu - corrigé
+</fr-FR>
+<it-IT>
+- DIE HARD TRILOGY / LAYER SECTION II: schermo nero risolto
+- PANZER DRAGOON SAGA / GUNGRIFFON II: blocco in gioco risolto
+- SONIC JAM: basso frame rate; ASTAL / STREET FIGHTER ALPHA 3: sfarfallio
+- SONIC 3D BLAST: intro che si bloccava e personaggi nascosti dal terreno
+- Audio: risolti interruzioni e crepitii, frame rate stabile a 60fps
+- MR. BONES: personaggi non visualizzati - risolto
+- Salvataggi di stato: risolti dati non salvati
+- Risolto il blocco dell'app all'uscita da un gioco
+</it-IT>
+<pt-BR>
+- DIE HARD TRILOGY / LAYER SECTION II: tela preta corrigida
+- PANZER DRAGOON SAGA / GUNGRIFFON II: travamento no jogo corrigido
+- SONIC JAM: baixa taxa de quadros; ASTAL / STREET FIGHTER ALPHA 3: cintilação
+- SONIC 3D BLAST: intro travando e personagens ocultos pelo chão - corrigido
+- Áudio: cortes e estalos corrigidos; 60fps estável
+- MR. BONES: personagens que não apareciam - corrigido
+- Estados de salvamento: mais confiáveis
+- App parava de responder ao sair de um jogo - corrigido
+</pt-BR>
+<id>
+- DIE HARD TRILOGY / LAYER SECTION II: layar hitam diperbaiki
+- PANZER DRAGOON SAGA / GUNGRIFFON II: game membeku diperbaiki
+- SONIC JAM: frame rate rendah; ASTAL / STREET FIGHTER ALPHA 3: layar berkedip
+- SONIC 3D BLAST: video pembuka berhenti dan karakter tertutup tanah
+- Audio: suara putus dan berderak diperbaiki; 60fps stabil
+- MR. BONES: karakter tidak tampil - diperbaiki
+- Save state: data yang tidak tersimpan diperbaiki
+- Aplikasi berhenti merespons saat keluar game - diperbaiki
+</id>
+<ja-JP>
+- 画面が真っ黒になる問題を修正 (ダイハード・トリロジー、レイヤーセクションII など)
+- アゼル -パンツァードラグーンRPG- / ガングリフォン II がフリーズする問題を修正
+- ソニックジャムのフレームレート低下と画面のちらつき (アスタル、ストリートファイターZERO3 など) を修正
+- ソニック3Dブラストのオープニングムービーが止まる問題とキャラクターが地面に隠れる問題を修正
+- 音声の途切れやプチプチというノイズを修正し、フレームレートを 60fps で安定化
+- どこでもセーブの保存漏れを修正し信頼性を向上
+- ミスター・ボーンズ などでキャラクターが表示されない問題を修正
+- ゲーム終了時にアプリが応答しなくなる問題を修正
+</ja-JP>
+<th>
+- DIE HARD TRILOGY / LAYER SECTION II: แก้ไขหน้าจอดำสนิท
+- PANZER DRAGOON SAGA / GUNGRIFFON II: แก้ไขอาการค้างระหว่างเล่น
+- SONIC JAM: แก้ไขเฟรมเรตต่ำ; ASTAL / STREET FIGHTER ALPHA 3: แก้ไขภาพกะพริบ
+- SONIC 3D BLAST: แก้ไขวิดีโอเปิดเกมที่หยุดค้าง และตัวละครที่ถูกพื้นบัง
+- เสียง: แก้ไขเสียงขาดหายและเสียงแตก และทำให้เฟรมเรตนิ่งที่ 60fps
+- MR. BONES: แก้ไขตัวละครที่ไม่แสดงผล
+- เซฟสเตต: แก้ไขข้อมูลที่ไม่ถูกบันทึก
+- แก้ไขแอปไม่ตอบสนองเมื่อออกจากเกม
+</th>
+<zh-CN>
+- DIE HARD TRILOGY / LAYER SECTION II：修复画面全黑的问题
+- PANZER DRAGOON SAGA / GUNGRIFFON II：修复游戏冻结的问题
+- SONIC JAM：修复帧率过低；ASTAL / STREET FIGHTER ALPHA 3：修复画面闪烁
+- SONIC 3D BLAST：修复开场动画卡住以及角色被地面遮挡的问题
+- 音频：修复声音断续与爆音，帧率稳定在 60fps
+- MR. BONES：修复角色不显示的问题
+- 即时存档：修复部分数据未保存的问题
+- 修复退出游戏时应用无响应的问题
+</zh-CN>

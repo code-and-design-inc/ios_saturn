@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<!--
+  <item
+    android:id="@+id/backup_to_cloud"
+    android:title="@string/backup_to_cloud"
+    android:icon="@drawable/cloud_upload_48px"
+  />
+ -->
+  <item
+    android:id="@+id/delete"
+    android:title="@string/delete"
+  />
+  <item
+      android:id="@+id/restore_defaults"
+      android:title="@string/restore_defaults"
+  />
+  <item
+      android:id="@+id/reproduce_report"
+      android:title="@string/reproduce_report"
+  />
+  <item
+      android:id="@+id/detail"
+      android:title="@string/menu_detail"
+   />
+  <item
+      android:id="@+id/create_shortcut"
+      android:title="@string/create_home_shortcut"
+   />
+</menu>

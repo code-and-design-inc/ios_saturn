@@ -1,0 +1,385 @@
+{
+  "project_info": {
+    "project_number": "000000000000",
+    "firebase_url": "REPLACE_WITH_YOUR_OWN_VALUE",
+    "project_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+    "storage_bucket": "REPLACE_WITH_YOUR_OWN_VALUE"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+        "android_client_info": {
+          "package_name": "org.devmiyax.yabasanshioro2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "REPLACE_WITH_YOUR_OWN_VALUE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+              "client_type": 3
+            },
+            {
+              "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "REPLACE_WITH_YOUR_OWN_VALUE"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+        "android_client_info": {
+          "package_name": "org.devmiyax.yabasanshioro2.debug"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "REPLACE_WITH_YOUR_OWN_VALUE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+              "client_type": 3
+            },
+            {
+              "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "REPLACE_WITH_YOUR_OWN_VALUE"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+        "android_client_info": {
+          "package_name": "org.devmiyax.yabasanshioro2.pro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "REPLACE_WITH_YOUR_OWN_VALUE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+              "client_type": 3
+            },
+            {
+              "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "REPLACE_WITH_YOUR_OWN_VALUE"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+        "android_client_info": {
+          "package_name": "org.uoyabause.android"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.uoyabause.android",
+            "certificate_hash": "REPLACE_WITH_YOUR_OWN_VALUE"
+          }
+        },
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.uoyabause.android",
+            "certificate_hash": "REPLACE_WITH_YOUR_OWN_VALUE"
+          }
+        },
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.uoyabause.android",
+            "certificate_hash": "REPLACE_WITH_YOUR_OWN_VALUE"
+          }
+        },
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "REPLACE_WITH_YOUR_OWN_VALUE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+              "client_type": 3
+            },
+            {
+              "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "REPLACE_WITH_YOUR_OWN_VALUE"
+              }
+            }
+          ]
+        }
+      },
+      "admob_app_id": "REPLACE_WITH_YOUR_OWN_VALUE"
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+        "android_client_info": {
+          "package_name": "org.uoyabause.uranus"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.uoyabause.uranus",
+            "certificate_hash": "REPLACE_WITH_YOUR_OWN_VALUE"
+          }
+        },
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.uoyabause.uranus",
+            "certificate_hash": "REPLACE_WITH_YOUR_OWN_VALUE"
+          }
+        },
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.uoyabause.uranus",
+            "certificate_hash": "REPLACE_WITH_YOUR_OWN_VALUE"
+          }
+        },
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.uoyabause.uranus",
+            "certificate_hash": "REPLACE_WITH_YOUR_OWN_VALUE"
+          }
+        },
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.uoyabause.uranus",
+            "certificate_hash": "REPLACE_WITH_YOUR_OWN_VALUE"
+          }
+        },
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.uoyabause.uranus",
+            "certificate_hash": "REPLACE_WITH_YOUR_OWN_VALUE"
+          }
+        },
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.uoyabause.uranus",
+            "certificate_hash": "REPLACE_WITH_YOUR_OWN_VALUE"
+          }
+        },
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "REPLACE_WITH_YOUR_OWN_VALUE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+              "client_type": 3
+            },
+            {
+              "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "REPLACE_WITH_YOUR_OWN_VALUE"
+              }
+            }
+          ]
+        }
+      },
+      "admob_app_id": "REPLACE_WITH_YOUR_OWN_VALUE"
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+        "android_client_info": {
+          "package_name": "org.uoyabause.uranus.debug"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.uoyabause.uranus.debug",
+            "certificate_hash": "REPLACE_WITH_YOUR_OWN_VALUE"
+          }
+        },
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.uoyabause.uranus.debug",
+            "certificate_hash": "REPLACE_WITH_YOUR_OWN_VALUE"
+          }
+        },
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "REPLACE_WITH_YOUR_OWN_VALUE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+              "client_type": 3
+            },
+            {
+              "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "REPLACE_WITH_YOUR_OWN_VALUE"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+        "android_client_info": {
+          "package_name": "org.uoyabause.uranus.pro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.uoyabause.uranus.pro",
+            "certificate_hash": "REPLACE_WITH_YOUR_OWN_VALUE"
+          }
+        },
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.uoyabause.uranus.pro",
+            "certificate_hash": "REPLACE_WITH_YOUR_OWN_VALUE"
+          }
+        },
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.uoyabause.uranus.pro",
+            "certificate_hash": "REPLACE_WITH_YOUR_OWN_VALUE"
+          }
+        },
+        {
+          "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "REPLACE_WITH_YOUR_OWN_VALUE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+              "client_type": 3
+            },
+            {
+              "client_id": "REPLACE_WITH_YOUR_OWN_VALUE",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "REPLACE_WITH_YOUR_OWN_VALUE"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

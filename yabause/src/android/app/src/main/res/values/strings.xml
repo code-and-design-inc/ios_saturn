@@ -1,0 +1,1080 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="menu_exit">Exit</string>
+    <string name="menu_reset">Reset</string>
+    <string name="menu_save_state">Save State</string>
+    <string name="menu_load_state">Load State</string>
+    <string name="menu_save_state_cloud">Save State to Cloud</string>
+    <string name="menu_load_state_cloud">Load State from Cloud</string>
+    <string name="load_game">Load Game</string>
+    <string name="setting">Settings</string>
+    <string name="choose_bios">Choose bios</string>
+    <string name="choose_cartridge">Choose cartridge</string>
+    <string name="choose_cpu_core">Choose Cpu Core</string>
+    <string name="choose_video_core">Choose Video Core</string>
+    <string name="audio_output">Audio output</string>
+    <string name="fps">FPS</string>
+    <string name="lock_landscape">Lock Landscape Mode</string>
+    <string name="frameskip">Frameskip</string>
+    <string name="keepaspectrate">Keep original aspect rate</string>
+    <string name="choose_input_device">Choose input Device</string>
+    <string name="input_device_title">Player1 Input Device</string>
+    <string name="input_device_title_player2">Player2 Input Device</string>
+    <string name="input_device">Choose</string>
+    <string name="input_device_setting">Edit Key Map</string>
+    <string name="onscrenn_pad_setting">Edit OnScreen Pad</string>
+    <string name="nopad">None</string>
+    <string name="bios">Bios</string>
+    <string name="cartridge">Cartridge</string>
+    <string name="cpu_core">Cpu Core</string>
+    <string name="video_core">Video Core</string>
+    <string name="setting_sound">Sound</string>
+    <string name="setting_graphics">Graphics</string>
+    <string name="setting_general">General</string>
+    <string name="msg_opengl_not_supported">Your device is not support OpenGL ES 3.0 or above.\nYou can not choose OpenGL Video Interface.\n</string>
+    <string name="skip">Skip</string>
+    <string name="donation">Support</string>
+    <string name="donate_message">
+        Support our development! \n\n
+        You can support the upstream project of Yaba Sanshiro by making a donation directly on their website http://yabause.org.
+        You can also support this project Yaba Sanshiro by clicking the donate button below, this will help towards development of more accurate emulation, input devices and a wider range of devices.
+        This screen and advertisement screen will not be shown, If you have donated.
+    </string>
+    <string name="thank_you">Thank you for your donation!</string>
+    <string name="error_consume">Failed to consume.</string>
+    <string name="do_donation">Donate</string>
+    <string name="no_thank_you">No, Thank you.</string>
+    <string name="donate_3doller">$3</string>
+    <string name="donate_5doller">$5</string>
+    <string name="donate_10doller">$10</string>
+    <string name="donate_30doller">$30</string>
+
+    <string name="input_the_key">Input the Key</string>
+    <string name="joystick_is_not_connected">Joypad is not connected.</string>
+    <string name="this_key_has_already_been_set">This Key has already been set.</string>
+    <string name="up">Up</string>
+    <string name="down">Down</string>
+    <string name="left">Left</string>
+    <string name="right">Right</string>
+    <string name="axis_x">Analog X</string>
+    <string name="axis_y">Analog Y</string>
+    <string name="axis_l">Analog L Trigger</string>
+    <string name="axis_r">Analog R Trigger</string>
+    <string name="l_trigger">L Trigger</string>
+    <string name="r_trigger">R Trigger</string>
+    <string name="start">Start</string>
+    <string name="a_button">A</string>
+    <string name="b_button">B</string>
+    <string name="c_button">C</string>
+    <string name="x_button">X</string>
+    <string name="y_button">Y</string>
+    <string name="z_button">Z</string>
+    <string name="menu">Menu</string>
+
+    <string name="scale">Scale</string>
+    <string name="transparency">Transparency</string>
+    <string name="hitsize">Touch Area</string>
+    <string name="analog_distance">Analog Range</string>
+    <string name="classic_pad_style">Classic Pad Style</string>
+    <string name="do_you_want_to_save_this_setting">Do you want to save this setting?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="exit">Exit</string>
+    <string name="confirm_exit">Are you sure you want to exit?</string>
+    <string name="ignore">Ignore</string>
+
+    <string name="new_dynrec_cpu_interface">New Dynamic Recompiler(faster than Interpreter. more accurate than Old Dynamic Recompiler)</string>
+    <string name="dynrec_cpu_interface">Old Dynamic Recompiler(fast but less accurate)</string>
+    <string name="software_cpu_interface">Interpreter(slow but more accurate)</string>
+
+    <string name="opengl_video_interface">OpenGL ES 3.1</string>
+    <string name="software_video_interface">Software</string>
+    <string name="vulkan_video_interface">Vulkan</string>
+    <string name="onscreen_pad">On-Screen Pad</string>
+    <string name="select_from_other_directory">Select from other directory.</string>
+
+    <string name="menu_save_screenshot">ScreenShot</string>
+    <string name="menu_report">Report</string>
+
+    <string name="video_filter">Filter</string>
+    <string name="choose_video_filter">Choose Video Filter</string>
+
+    <string name="video_filter_none">None</string>
+    <string name="video_filter_fxaa">FXAA</string>
+    <string name="video_filter_scanline">Scanline</string>
+    <string name="video_filter_bilinear">Bilinear(Enables only when Native resolution is not selected)</string>
+    <string name="browse_title"><![CDATA[Videos by Your Company]]></string>
+    <string name="related_movies">Related Videos</string>
+    <string name="vertical_grid_title"><![CDATA[Vertical Video Grid]]></string>
+    <string name="delete_confirm">"Are you sure want to delete this item?"</string>string>
+    <string name="error">Error</string>
+    <string name="ok">Ok</string>
+    <string name="cancel">Cancel</string>
+    <string name="pause">Pause</string>
+    <string name="play">Play</string>
+    <string name="stop">Stop</string>
+    <string name="init_text">00:00</string>
+    <string name="play_pause_description">Play Pause Button</string>
+    <string name="loading">Loading&#8230;</string>
+    <string name="no_video_found">No video was found</string>
+    <string name="about_app">About DemoCast Player</string>
+    <string name="version">Version: %1$s</string>
+    <string name="popular_header">Popular Videos</string>
+    <string name="preferences">PREFERENCES</string>
+    <string name="grid_view">Grid View</string>
+    <string name="error_fragment">Error Fragment</string>
+    <string name="personal_settings">Personal Settings</string>
+    <string name="refresh_db">Refresh Game List</string>
+    <string name="select_bk_image">Select Background Image</string>
+
+    <string name="report_sent_success">Thank you for your report!</string>
+    <string name="report_sent_failed">Failed to send report</string>
+    <string name="report_attachments">Attachments</string>
+    <string name="report_include_screenshot">Include Screenshot</string>
+    <string name="report_include_savestate">Include Save State</string>
+    <string name="report_include_memory">Include Memory (Backup RAM)</string>
+    <string name="report_include_reproduction_data">Include reproduction data</string>
+    <string name="report_estimated_size">Estimated size: %s</string>
+    <string name="report_screenshot_preview">Screenshot Preview</string>
+
+
+    <!-- Error messages -->
+    <string name="video_error_media_load_timeout">Media loading timed out</string>
+    <string name="video_error_server_inaccessible">Media server was not reachable</string>
+    <string name="video_error_unknown_error">Failed to load video</string>
+    <string name="error_fragment_message">An error occurred</string>
+    <string name="dismiss_error">Dismiss</string>
+    <string name="oops">Oops</string>
+
+    <string name="title_activity_game_select" translatable="false">Yaba Sanshiro</string>
+    <string name="polygon_generation_type">Polygon Generation Type</string>
+    <string name="choose_polygon_generation_type">Choose Polygon Generation type</string>
+    <string name="sound_engine">Sound Engine</string>
+    <string name="choose_sound_engine">Choose sound engine</string>
+    <string name="invitation_title">Send App Invite uoYabause</string>
+    <string name="invitation_message">Play SEGA Saturn games using this app!</string>
+    <string name="invitation_deep_link" translatable="false">https://b472u.app.goo.gl/YJ5F</string>
+    <string name="invitation_custom_image" translatable="false">https://lh3.googleusercontent.com/orp-j3lNGj24xvfVBEQvwWyaVhOQ_aTGc0nwIInDXBlNGUnSOdB_hb8sPGSmgmd0Jvkx=h310-rw</string>
+    <string name="invitation_cta">Install!</string>
+    <string name="invite">Introduce</string>
+    <string name="invite_message">Would you like to introduce this app?</string>
+    <string name="video_resolution">Rendering Resolution</string>
+    <string name="video_aspect_ratio">Aspect Ratio</string>
+    <string name="rbg_resolution">RBG Resolution</string>
+    <string name="choose_video_resolution">Choose rendering resolution</string>
+    <string name="choose_video_aspect_ratio">Choose rendering aspect ratio</string>
+    <string name="choose_rbg_resolution">Choose RBG(Rotate Background) Screen Resolution</string>
+    <string name="open_cd_tray">Open CD Tray</string>
+    <string name="close_cd_tray">Close CD Tray</string>
+    <string name="menu_analog">Enable Analog Control</string>
+    <string name="menu_set_as_gametitle">Set As Title Icon</string>
+    <string name="add_new_code">Add New Code</string>
+    <string name="str_use_compute_shader">Use Compute Shader</string>
+    <string name="enable">Enable</string>
+    <string name="disable">Disable</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
+    <string name="toggle_like">Toggle like</string>
+    <string name="apply">Apply</string>
+    <string name="cheat_description">Description</string>
+    <string name="action_replay_code">Action Replay Code</string>
+    <string name="select_game_directory">Select Game Directory</string>
+    <string name="add_dir">Add</string>
+
+    <string name="sound_curent">Current(High quality version for high-end devices)</string>
+    <string name="sound_legacy">Legacy(for low-end devices)</string>
+
+    <string name="res_native">Native(native resolution of this android device)</string>
+    <string name="res_1080p">1080p</string>
+    <string name="res_720p">720p</string>
+    <string name="res_4x">4x</string>
+    <string name="res_2x">2x</string>
+    <string name="res_original">Original</string>
+    <string name="ar_original">Original</string>
+
+    <string name="res_4p3">4:3</string>
+    <string name="res_16p9">16:9</string>
+    <string name="res_full_screen">Full screen</string>
+
+
+    <string name="poly_triangle">Triangle using perspective correction</string>
+    <string name="poly_cpu_tess">CPU Tessellation</string>
+    <string name="poly_gpu_tess">GPU Tessellation</string>
+    <string name="poly_compute_rasterizer">Compute Rasterizer (Experimental)</string>
+    <string name="pro_gate_compute_rasterizer_message">Compute Rasterizer is a Pro-only feature. Subscribe or buy Pro to enable it.</string>
+    <string name="menu_load">Load</string>
+    <string name="menu_delete">Delete</string>
+    <string name="title_activity_iso_download">IsoDownload</string>
+
+
+    <string name="download_to">Download to ..</string>
+    <string name="choose_download_to">Download to ..</string>
+
+    <string name="internal">Internal Storage</string>
+    <string name="external">SD card</string>
+    <string name="network_error">Network error.</string>
+    <string name="server_is_not_found">Server is not found or not accessible.</string>
+    <string name="server_error">Server error.</string>
+    <string name="unable_to_process_file_for_md5">Unable to process file for MD5</string>
+    <string name="downloading_cd_rom">Downloading CD-ROM</string>
+    <string name="downloading">Downloading</string>
+    <string name="finished">Download Finished!</string>
+    <string name="failed">Download Failed</string>
+    <string name="canceled">Download Cancelled</string>
+    <string name="serching_for_a_server">Searching for a server..</string>
+    <string name="waiting_for_reading">Waiting for reading to finish.</string>
+    <string name="checking_file">Checking file.</string>
+    <string name="download_file_is_broken">Download file is broken.</string>
+    <string name="you_need_wifi_connection">You need Wifi connection.</string>
+    <string name="free_space">Free space</string>
+    <string name="no_enough_free_space">You don\'t have enough free space.</string>
+
+    <string name="extend_internal_memory">Extend Internal Memory to 8MByte</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="this_func_not_yet">This function is not implemented yet.</string>
+    <string name="memory_manager">Memory Manager</string>
+    <string name="have_donated">I have already donated to uoYabause(not Yaba Sanshiro)</string>
+    <string name="title_activity_check_payment">CheckPaymentActivity</string>
+    <string name="send_your_order_id">Send your order number for uoYabause to dismiss Ad.   You can check your order id at http://payments.google.com</string>
+    <string name="order_number_not_found">This order number does not be found.</string>
+    <string name="order_number_used">This order number has been used.</string>
+    <string name="new_version_available">New Yaba Sanshiro is available</string>
+
+    <string name="sign_in_cancelled">Sign in is cancelled</string>
+    <string name="no_internet_connection">No internet connection</string>
+    <string name="unknown_error">Unknown Error</string>
+    <string name="unknown_sign_in_response">Unknown sign in response</string>
+    <string name="apple_sign_in_error">Apple Sign In Error</string>
+    <string name="apple_sign_in_cancelled">Apple Sign In was cancelled</string>
+    <string name="are_you_sure_to_delete">Are you sure to delete</string>
+    <string name="share">Share</string>
+    <string name="unsahre">UnShare</string>
+    <string name="send">Send</string>
+    <string name="issue_report">REVIEW:</string>
+    <string name="status_report">STATUS REPORT:</string>
+    <string name="send_warning">Send current screenshot and state  (Upload size is about 2MByte)</string>
+
+    <string name="report_message_1">Won\'t Boot</string>
+    <string name="report_message_2">Freeze</string>
+    <string name="report_message_3">Playable</string>
+    <string name="report_message_4">Great</string>
+    <string name="report_message_5">Perfect</string>
+
+    <string name="game_report_message_1">Awful</string>
+    <string name="game_report_message_2">Bad</string>
+    <string name="game_report_message_3">Average</string>
+    <string name="game_report_message_4">Good</string>
+    <string name="game_report_message_5">Excellent</string>
+
+
+    <string name="accept">Accept</string>
+    <string name="decline">Decline</string>
+    <string name="sign_out">Sign out</string>
+    <string name="sign_in">Sign in</string>
+    <string name="siginin_message">
+        Signing in enable to backup save data and state data to the cloud and share them between devices.\n
+        However, these functions are experimental, so they do not work as expected, specifications may be changed or terminated without prior notice.
+        Even if you don\'t sign in, libraries such as Firebase collect the information to improve your app. A detailed privacy policy can be found at https://www.yabasanshiro.com/privacy.
+    </string>
+    <string name="agree">I agree</string>
+    <string name="do_you_want_to_sign_in">Do you want to sign in?</string>
+    <string name="never_ask_me_again">Never ask me again</string>
+    <string name="deleting_file">Deleting file</string>
+    <string name="sure_delete">Are you sure want to delete this file?</string>
+    <string name="copy_to_cloud">Copy to cloud</string>
+    <string name="copy_to_external">Copy to external</string>
+    <string name="copy_to_internal">Copy to internal</string>
+    <string name="activate">Activate</string>
+    <string name="rate">Like</string>
+
+    <!-- Cloud Game Backup -->
+    <string name="backup_to_cloud">Backup to Cloud</string>
+    <string name="remove_from_cloud">Remove from Cloud</string>
+    <string name="restore_from_cloud">Restore from Cloud</string>
+    <string name="backup_success">Game backed up successfully</string>
+    <string name="backup_failed">Failed to backup game</string>
+    <string name="restore_success">Game restored successfully</string>
+    <string name="restore_failed">Failed to restore game</string>
+    <string name="backup_limit_reached">Backup limit reached (maximum 1 game)</string>
+    <string name="legal_warning_title">Legal Notice</string>
+    <string name="legal_warning_message">This file should only be used as a backup of a game you own. Please follow your country\'s laws regarding game backups.</string>
+    <string name="cloud_only_game">Available in cloud (tap to download)</string>
+    <string name="download_from_cloud">Download from Cloud</string>
+    <string name="remove_success">Game removed from cloud successfully</string>
+    <string name="remove_failed">Failed to remove game from cloud</string>
+
+    <!-- Backup Replacement Dialog -->
+    <string name="backup_limit_dialog_title">Backup Limit Reached</string>
+    <string name="backup_limit_dialog_message">You have reached the maximum number of games you can back up. Select a game to replace:</string>
+    <string name="replace">Replace</string>
+    <string name="backup_date">Backed up on %1$s</string>
+    <string name="no_game_selected">Please select a game to replace</string>
+    <string name="replace_backup_success">Successfully replaced backup</string>
+    <string name="replace_backup_failed">Failed to replace backup</string>
+
+    <string name="str_rotate_screen">90 degree rotation</string>
+    <string name="title_activity_game_select_phone">GameSelectActivityPhone</string>
+
+    <string name="drawer_open">drawer_open</string>
+    <string name="drawer_close">drawer_close</string>
+    <string name="title_activity_startup">StartupActivity</string>
+    <string name="foce_android_tv_mode">Force Android TV mode</string>
+    <string name="game_select_screen">Game Select Screen</string>
+    <string name="scsp_sync">Scsp synchronization count per a frame(1 - 255)</string>
+    <string name="need_to_accept">You need to accept the permission request for using this app. Please restart again.</string>
+
+    <string name="cpu_sync_per_line">Emulation Priority</string>
+    <string name="sel_cpu_sync_per_line"></string>
+    <string name="speed">Speed</string>
+    <string name="accuracy">Accuracy</string>
+
+    <string name="time_synchronization_mode">Sound time synchronization mode</string>
+    <string name="choose_time_synchronization_mode">Sound time synchronization mode</string>
+    <string name="cpu_time">CPU time (Synchronize to emulated cpu time. If your device is fast enough, Sound emulation is very accurate.)</string>
+    <string name="real_time">Real time (Synchronize to real world time. Although your device is not so fast, Sound is not corrupted.)</string>
+    <string name="information">Information</string>
+    <string name="already_have_been">If you already have been donated, Please contact smiyaxdev@gmail.com</string>
+    <string name="close">Close</string>
+    <string name="login">Login</string>
+    <string name="logout">Logout</string>
+    <string name="show_fps">Show FPS</string>
+    <string name="enable_frame_skip">Enable Frame skip</string>
+    <string name="game_setting">Game Setting</string>
+    <string name="welcome">
+        <![CDATA[
+        # Welcome! \n\n
+
+        To play SEGA Saturn games, follow this instructions.\n\n
+
+        1. Generate an image file from your game CD-ROM using DiscImageChef or something. Useful tools are listed [here](http://wiki.redump.org/index.php?title=Useful_Links).\n
+        2. Copy the image files to the directory **\"%1$s\"**  in the smart phone internal storage.\n
+        3. Show drawer menu and tap \"Refresh Game List\". Then game list is shown.\n
+        4. Tap the game title you want to play.\n
+        5. Enjoy!\n
+        \n
+        For more detail checkout this [Youtube video](https://www.youtube.com/watch?v=Ch6_KhhAg10).\n
+        ]]>
+    </string>
+
+    <string name="welcome_11">
+        <![CDATA[
+        # Welcome! \n\n
+
+        To play SEGA Saturn games, you have four options.\n\n
+
+        ## 1. Copy games to this Android device directly.\n
+
+        copy your ISO images to **\"%1$s\"**.\n
+
+        ## 2. Copy to an external SD card.\n
+
+        copy your ISO images to **\"%2$s\"** on an SD card.\n
+
+        ## 3. Tap + button\n
+
+        If you already have CHD or zipped iso images files. Just tap + button and select the file. \n\n
+
+        ## 4. Select a directory that contains ISO images\n
+
+        [Setting] -> [Select Game Directory] -> [ADD] \n\n
+
+
+        More detail is described in our [web site](https://www.yabasanshiro.com/howto#android).\n
+
+        ]]>
+    </string>
+
+
+    <string name="storage_migration_dialog_title">Game Data Migration Required</string>
+    <string name="storage_migration_dialog_message">Your game files will be moved to a shared folder (Android/media) so they are preserved even if this app is uninstalled.\n\nDepending on the number and size of your game files, this may take a few minutes. Please do not close the app during migration.</string>
+    <string name="storage_migration_dialog_migrate">Migrate Now</string>
+    <string name="storage_migration_dialog_later">Later</string>
+    <string name="storage_migration_progress_title">Moving game files…</string>
+
+    <string name="delete_confirm_title">DELETE CONFIRM</string>
+    <string name="not_available">NOT AVAILABLE!</string>
+    <string name="only_pro_version">This function is only available for pro version</string>
+    <string name="got_it">Got it!</string>
+    <string name="enter_pinin">Enter this PIN to your device</string>
+    <string name="sign_in_to_other_devices">Sign in to other devices</string>
+    <string name="hide_status_bar_and_navigation_bar">Hide Status bar and Navigation bar</string>
+    <string name="title_activity_yaba_snashiro_settings">YabaSnashiroSettingsActivity</string>
+
+    <!-- Preference Titles -->
+    <string name="messages_header">Messages</string>
+    <string name="sync_header">Sync</string>
+
+    <!-- Messages Preferences -->
+    <string name="signature_title">Your signature</string>
+    <string name="reply_title">Default reply action</string>
+
+    <!-- Sync Preferences -->
+    <string name="sync_title">Sync email periodically</string>
+    <string name="attachment_title">Download incoming attachments</string>
+    <string name="attachment_summary_on">Automatically download attachments for incoming emails
+    </string>
+    <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="do_you_want_to_install">Do you want to install?</string>
+    <string name="only_chd_is_supported_for_load_game">You can choose chd,zip file.</string>
+    <string name="install_game_message">If you install, you can play from this game list directly. It takes up  </string>
+    <string name="install_game_message_after">MB of storage space.</string>
+
+    <string name="menu_acp">Action Replay Code</string>
+    <string name="updating">Updating...</string>
+    <string name="add_a_game">Add a game</string>
+    <string name="frameLimit">Speed Limit</string>
+    <string name="chooseFrameLimit">Choose frame limit mode</string>
+    <string name="frameLimitNormal">Normal</string>
+    <string name="frameLimitDouble">Double</string>
+    <string name="frameLimitUnLimited">No Limit</string>
+    <string name="pro_version_available">Pro version is available!\n\n * No limit install count\n * Save/Load game state between devices\n * No advertisement\n\n</string>
+    <string name="select_install_location">Install Location</string>
+    <string name="remaining_installation_count">Remaining installation count</string>
+    <string name="remaining_installation_count_is">Remaining installation count is </string>
+    <string name="which_storage">Which Storage?</string>
+    <string name="or_place_file_to">Or place game into \"%1$s\" manually.</string>
+    <string name="agreement">
+    By Tapping START button, you agree to <a href="https://www.yabasanshiro.com/terms-of-use">the terms of use</a>.
+    Note: <a href="https://www.yabasanshiro.com/privacy"> The Privacy Policy </a> describes how data is handled. YabaSanshiro sends diagnostics data to devMiyax and third party services to help improve the app.
+    </string>
+
+    <string name="use_cpu_affinity">
+        Use CPU affinity
+    </string>
+
+    <string name="use_sh2_cache">
+        Use SH2 cache
+    </string>
+
+    <!-- LeaderBoard strings -->
+    <string name="leaderboard_title">Leaderboard</string>
+    <string name="leaderboard_position">Pos.</string>
+    <string name="leaderboard_name">Name</string>
+    <string name="leaderboard_time">Time</string>
+    <string name="leaderboard_diff">Diff</string>
+    <string name="leaderboard_no_data">This game does not have a leaderboard yet</string>
+    <string name="leaderboard_not_supported">This game does not support leaderboard yet</string>
+    <string name="menu_leaderboard">Leaderboard</string>
+
+    <string name="restore_defaults">
+        Restore defaults
+    </string>
+    <string name="restore_defaults_confirm">Reset all game-specific settings to defaults?</string>
+    <string name="restore_defaults_success">Settings restored to defaults</string>
+    <string name="menu_detail">Detail</string>
+    <string name="create_home_shortcut">Create Home Shortcut</string>
+    <string name="shortcut_created">Shortcut created on home screen</string>
+    <string name="shortcut_not_supported">Your device doesn\'t support shortcuts</string>
+    <string name="last_play_game">Last play game:</string>
+    <string name="device">Device:</string>
+    <string name="auto_backup_memory_sync">Auto backup sync</string>
+    <string name="auto_backup_sync">Auto backup sync</string>
+    <string name="msg_fail_to_upload_backup_data_to_cloud">Fail to upload backup data to cloud</string>
+    <string name="msg_fail_to_unzip_backup_data_from_cloud">Fail to unzip backup data from cloud</string>
+    <string name="msg_success_to_download_backup_data_from_cloud">Success to download backup data from cloud</string>
+    <string name="msg_fail_to_download_backup_data_from_cloud">Fail to download backup data from cloud</string>
+    <string name="msg_fail_to_zip_backup_data">Fail to zip backup data</string>
+    <string name="msg_success_to_upload_backup_data_to_cloud">Success to upload backup data to cloud</string>
+
+    <string name="perf_use_cpu_affinity_detail">In the case of an asymmetric multi-core CPU, the higher clocked cores are preferentially utilized. However, depending on the device, there may be a decrease in performance in reverse.</string>
+    <string name="pref_use_sh2_cache_detail">Enabling the emulation of SH2 cache processing improves compatibility. However, it comes at the cost of emulation speed.</string>
+    <string name="pref_auto_state_save_title">Enable Auto State Save</string>
+    <string name="pref_auto_state_save_detail">Automatically saves the state upon exiting. The next time it starts, it can resume from the saved point. However, there may be cases where reproduction is not successful.</string>
+
+    <string name="auto_state_save_data_found">Auto state save data found!</string>
+    <string name="auto_state_detail">Do you want to load the state? Unfortunately, it may not be very reliable. If it doesn\'t work well, please tap Cancel.</string>
+    <string name="load_state">Load State</string>
+    <string name="force_feedback">Force feedback</string>
+    <string name="visual_feedback">Visual feedback</string>
+    <string name="show_analog_dpad_switch_button">Show Analog/Dpad switch button</string>
+
+    <string name="file_not_found">File not found: %1$s</string>
+    <string name="i_o_error_occurred">I/O error occurred: %1$s</string>
+    <string name="read_permission_denied">Read permission denied: %1$s</string>
+    <string name="other_file_error">Other File Error: %1$s</string>
+    <string name="no_game_file_is_selected">No Game file is selected</string>
+    <string name="search_games">Search games</string>
+    <string name="sort_games">Sort games</string>
+    <string name="toggle_view_mode">Toggle view mode</string>
+    <string name="tap_to_start_game">Tap to start game</string>
+    <string name="sort_by">Sort by</string>
+    <string name="sort_by_name">Sort by name</string>
+    <string name="no_games_found">No games found</string>
+    <string name="add_games_message">Copy your game files to:\n%1$s\nor tap + to select a file or folder</string>
+    <string name="error_loading_games">Failed to load games</string>
+    <string name="select_a_game">Select a game</string>
+    <string name="cloud_label">Cloud</string>
+    <string name="rating_description">Rating: %1$d out of 5 stars</string>
+    <string name="box_art_description">%1$s box art</string>
+    <string name="shortcut">Shortcut</string>
+    <string name="download">Download</string>
+    <string name="games_count">Games: %1$d</string>
+    <string name="confirm_delete_title">Delete Game</string>
+    <string name="confirm_delete_message">Delete %1$s?</string>
+    <string name="sort_by_date">Sort by release date</string>
+    <string name="sort_by_recently_played">Sort by recently played</string>
+    <string name="game_menu">Game menu</string>
+    <string name="fail_to_open_with">Fail to open %1$s with %2$s</string>
+    <string name="fail_to_open">Fail to open %1$s</string>
+    <string name="fail_to_open_file_access_denied">Cannot access the file: %1$s\n\nThe file may have been moved, deleted, or the app no longer has permission to access it. Please select the game from the game list again.</string>
+    <string name="game_not_in_list">This game is not registered in the game list.\n\nCheck if the file is in the correct folder.</string>
+    <string name="pro_version_required_title">Pro Version Required</string>
+    <string name="pro_version_required_message">Launching games from external apps requires the Pro version.\n\nWould you like to get YabaSanshiro Pro?</string>
+    <string name="go_to_store">Go to Store</string>
+    <string name="failed_to_initialize">Fail to initialize</string>
+    <string name="fail_to_get_game_code_this_file_is_not_sega_saturn_game">Fail to get game code. This file is not SEGA Saturn game.</string>
+    <string name="fail_to_initialize_emulator">Fail to initialize emulator</string>
+    <string name="notification_permission_title">Request for Notification Permission</string>
+    <string name="notification_permission_message">By allowing notifications, you will receive news from the developer.</string>
+    <string name="permission_required">Permission Required</string>
+    <string name="write_permission_explanation">Write permission is required to delete game files. Please select the folder containing your game files to grant permission.</string>
+    <string name="report_notice">
+        &lt;h2&gt; Post your review!&lt;/h2&gt; &lt;br&gt; Note: Your review content, username, and profile icon will be publicly visible. Before posting please check the &lt;a href="https://www.yabasanshiro.com/privacy"&gt;privacy policy&lt;/a&gt;.
+    </string>
+
+    <!-- Discord Integration Strings -->
+    <string name="discord_logo">Discord Logo</string>
+    <string name="link_discord_account">Link Discord Account</string>
+    <string name="discord_link_prompt_title">Link Your Discord Account</string>
+    <string name="discord_link_prompt_message">Would you like to link your Discord account? This will update your profile with your Discord username and avatar.</string>
+    <string name="discord_account_linked">Discord account successfully linked!</string>
+    <string name="discord_account_link_failed">Failed to link Discord account</string>
+    <string name="discord_link_error">Discord linking error</string>
+    <string name="discord_link_cancelled">Discord linking cancelled</string>
+    <string name="discord_already_linked">Discord account already linked</string>
+    <string name="discord_unlink_account">Unlink Discord Account</string>
+    <string name="discord_unlink_confirm">Are you sure you want to unlink your Discord account?</string>
+    <string name="discord_account_unlinked">Discord account unlinked</string>
+    <string name="discord_link_title">Link Your Discord Account</string>
+    <string name="discord_link_description">Link your Discord account to use your Discord username and avatar in this app.</string>
+    <string name="skip_for_now">Skip for now</string>
+    <string name="menu_link_discord">Link Discord Account</string>
+    <string name="first_login_discord_prompt">Would you like to link your Discord account?</string>
+    <string name="discord_link_prompt_yes">Yes, Link Account</string>
+    <string name="discord_link_prompt_no">No, Thanks</string>
+    <string name="discord_oauth_redirect_title">Discord Authentication</string>
+    <string name="discord_oauth_processing">Processing Discord account link...</string>
+    <string name="account_category">Account</string>
+    <string name="summary_for_discord_login">Sync your username and avatar image with your Discord one.</string>
+    <string name="summary_for_login_to_other">You can log in to the Windows version of Yaba Ssanshiro with the pin displayed.</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="delete_account_summary">Delete your account and all associated data</string>
+    <string name="delete_account_confirmation_title">Delete Account</string>
+    <string name="delete_account_confirmation_message">Are you sure you want to delete your account? This will permanently delete your account and all associated data. This action cannot be undone.</string>
+    <string name="account_deleted">Account successfully deleted</string>
+    <string name="account_deletion_failed">Failed to delete account</string>
+    <string name="discord_link_not_available_on_tv">This feature is not available on Android TV. Please use your phone or tablet.</string>
+
+    <!-- Discord Webhook Settings -->
+    <string name="discord_webhook_enabled">Enable Discord Webhook Notifications</string>
+    <string name="discord_webhook_url">Discord Webhook URL</string>
+    <string name="discord_webhook_url_summary">Enter the Discord webhook URL to post new records</string>
+    <string name="discord_webhook_notification_title">New Record Posted</string>
+    <string name="discord_webhook_notification_message">Your new record has been posted to Discord</string>
+    <string name="discord_webhook_error">Failed to post to Discord</string>
+
+    <!-- RetroAchievements Integration Strings -->
+
+    <!-- RetroAchievements Settings -->
+    <string name="retroachievements_category">RetroAchievements</string>
+    <string name="retroachievements_username">Username</string>
+    <string name="retroachievements_password">Password</string>
+    <string name="retroachievements_login">Login to RetroAchievements</string>
+    <string name="retroachievements_logout">Logout from RetroAchievements</string>
+    <string name="retroachievements_status">Status</string>
+    <string name="retroachievements_hardcore_mode">Hardcore Mode</string>
+    <string name="retroachievements_hardcore_mode_summary">Disables save states, cheats, and other features that affect achievements</string>
+    <string name="retroachievements_auto_login">Auto-Login</string>
+    <string name="retroachievements_auto_login_summary">Automatically login when the app starts</string>
+    <string name="retroachievements_logged_in_as">Logged in as: %s</string>
+    <string name="retroachievements_not_connected">Not connected to RetroAchievements</string>
+    <string name="retroachievements_connected">Connected to RetroAchievements</string>
+
+    <!-- Achievement List -->
+    <string name="menu_achievements">Achievements</string>
+    <string name="achievements_title">Achievement List</string>
+    <string name="achievements_unlocked">Unlocked</string>
+    <string name="achievements_locked">Locked</string>
+    <string name="achievements_unsupported">Unsupported</string>
+    <string name="achievements_progress">Progress: %d%%</string>
+    <string name="achievements_no_game_loaded">No game loaded</string>
+    <string name="achievements_not_logged_in">Not logged in to RetroAchievements</string>
+
+    <!-- RetroAchievements Settings Fragment -->
+    <string name="retroachievements_settings_title">RetroAchievements Settings</string>
+    <string name="retroachievements_login_section">RetroAchievements Login</string>
+    <string name="retroachievements_settings_section">Settings</string>
+    <string name="retroachievements_username_hint">Username</string>
+    <string name="retroachievements_password_hint">Password</string>
+    <string name="retroachievements_hardcore_description">Enables hardcore mode for achievements (disables save states, cheats, etc.)</string>
+    <string name="retroachievements_auto_login_description">Automatically login to RetroAchievements when the app starts</string>
+    <string name="retroachievements_login_failed">Login failed: %s</string>
+    <string name="retroachievements_login_success">Login successful!</string>
+    <string name="retroachievements_logout_success">Logged out from RetroAchievements</string>
+    <string name="retroachievements_login_required">Please enter username and password</string>
+    <string name="retroachievements_logging_in">Logging in...</string>
+
+    <!-- RetroAchievements Notifications -->
+    <string name="retroachievements_achievement_unlocked">🏆 Achievement</string>
+    <string name="retroachievements_unofficial_achievement">🟠 Unofficial</string>
+    <string name="retroachievements_leaderboard_notification">📊 Leaderboard</string>
+    <string name="retroachievements_login_notification">RetroAchievements Login</string>
+    <string name="retroachievements_login_success_message">Logged in as %1$s%2$s</string>
+    <string name="retroachievements_points_suffix"> (%d points)</string>
+    <string name="retroachievements_game_achievements_message">You have %1$d of %2$d achievements unlocked.</string>
+    <string name="retroachievements_no_achievements_message">This game has no achievements.</string>
+    <string name="retroachievements_mastery_completed">👑 Completed</string>
+    <string name="retroachievements_mastery_hardcore">🔥 Mastered</string>
+    <string name="retroachievements_mastery_achievements_points">%1$d achievements, %2$d points</string>
+    <string name="retroachievements_mastery_playtime">Play time: %s</string>
+    <string name="retroachievements_server_error">⚠️ Server Error</string>
+    <string name="retroachievements_submit_score">Submit</string>
+    <string name="retroachievements_points_abbreviation">pt</string>
+
+    <!-- Account Management -->
+    <string name="account_management">Account Management</string>
+    <string name="welcome_user">Welcome %1$s!</string>
+    <string name="sign_in_cancelled_message">Sign in cancelled</string>
+    <string name="sign_in_failed_message">Sign in failed: %1$s</string>
+    <string name="please_enter_username_password">Please enter both username and password</string>
+    <string name="retroachievements_login_dialog_title">RetroAchievements Login</string>
+    <string name="unknown_user">Unknown User</string>
+    <string name="no_email">No email</string>
+    <string name="last_login_format">Last login: %1$s</string>
+    <string name="unknown_login">Unknown</string>
+    <string name="not_signed_in">Not signed in</string>
+    <string name="please_sign_in_to_continue">Please sign in to continue</string>
+    <string name="no_login_data">No login data</string>
+    <string name="user_profile_updated">User profile updated</string>
+    <string name="connected">Connected</string>
+    <string name="not_connected">Not connected</string>
+    <string name="discord_user">Discord User</string>
+    <string name="retroachievements_user">RetroAchievements User</string>
+    <string name="sign_in_required_for_pin">Sign-in required to generate PIN</string>
+    <string name="pin_copied_to_clipboard">PIN copied to clipboard</string>
+    <string name="share_pin">Share PIN</string>
+    <string name="delete_account_dialog_title">Delete Account</string>
+    <string name="delete_account_dialog_message">Are you sure you want to delete your account? This action cannot be undone.</string>
+    <string name="sign_in_to_access_features">Sign in to access all features</string>
+    <string name="google_account_benefits_title">Sign in for additional features</string>
+    <string name="benefit_cloud_backup">Cloud backup and sharing of save data</string>
+    <string name="benefit_cross_device_sync">Cross-device synchronization</string>
+    <string name="benefit_data_export">Access to shared Action Replay Codes</string>
+    <string name="export_your_personal_data">Export Your Personal Data</string>
+    <string name="gdpr_export_message">You have the right to receive your personal data in a portable format under GDPR Article 20.\n\nThis export includes:\n• Your profile information\n• Connected account details\n• Cross-device sync history\n• Data processing information\n\nThe data will be provided in JSON format that can be read by other systems.</string>
+    <string name="export_data">Export Data</string>
+    <string name="data_export_successful">Data Export Successful</string>
+    <string name="export_success_message">Your personal data has been successfully exported to:\n%1$s\n\nThis file contains all your personal data in JSON format as required by GDPR.</string>
+    <string name="share_file">Share File</string>
+    <string name="view_in_file_manager">View in File Manager</string>
+    <string name="done">Done</string>
+    <string name="share_data_export">Share your data export</string>
+    <string name="failed_to_share_file">Failed to share file: %1$s</string>
+    <string name="no_file_manager_available">No file manager available.\nPlease place game files manually in:\nAndroid/media/%1$s/games/</string>
+    <string name="export_failed_message">Export failed: %1$s</string>
+    <string name="no_data_to_export">No data to export</string>
+    <string name="failed_to_open_url">Failed to open URL: %1$s</string>
+
+    <!-- Additional Account Management Strings -->
+    <string name="account_management_title">Account Management</string>
+    <string name="loading_account_data">Loading account data...</string>
+    <string name="error_loading_account_data">Failed to load account data</string>
+    <string name="error_icon">Error icon</string>
+    <string name="main_account_benefits_title">Benefits of signing in</string>
+    <string name="main_benefit_cloud_backup">• Cloud backup for save files and states</string>
+    <string name="main_benefit_action_replay">• Action Replay code synchronization</string>
+    <string name="main_benefit_leaderboard">• Leaderboard participation</string>
+    <string name="main_benefit_sync">• Cross-device data synchronization</string>
+    <string name="privacy_terms_description">Read our</string>
+    <string name="privacy_policy_link">Privacy Policy</string>
+    <string name="terms_of_service_link">Terms of Service</string>
+    <string name="connected_accounts">Connected Accounts</string>
+    <string name="connected_accounts_empty_hint">Link your accounts to unlock additional features</string>
+    <string name="account_actions">Account Actions</string>
+    <string name="export_data_icon">Export data icon</string>
+    <string name="export_data_description">Download your personal data as required by GDPR</string>
+    <string name="export">Export</string>
+    <string name="delete_account_icon">Delete account icon</string>
+    <string name="delete_account_description">Permanently delete your account and all data</string>
+
+    <!-- Accessibility Descriptions -->
+    <string name="user_avatar_description">User profile avatar</string>
+    <string name="discord_avatar_description">Discord user avatar</string>
+    <string name="retroachievements_avatar_description">RetroAchievements user avatar</string>
+    <string name="connection_status_indicator">Connection status indicator</string>
+    <string name="sign_out_button">Sign out of account</string>
+    <string name="sign_in_button_description">Sign in to your account</string>
+    <string name="link_discord_button">Link Discord account</string>
+    <string name="unlink_discord_button">Unlink Discord account</string>
+    <string name="create_discord_account_button">Create Discord account</string>
+    <string name="login_retroachievements_button">Login to RetroAchievements</string>
+    <string name="logout_retroachievements_button">Logout from RetroAchievements</string>
+    <string name="create_retroachievements_account_button">Create RetroAchievements account</string>
+    <string name="generate_pin_button">Generate PIN for device synchronization</string>
+    <string name="refresh_pin_button">Generate new PIN</string>
+    <string name="export_data_button_description">Export personal data</string>
+    <string name="delete_account_button_description">Delete account permanently</string>
+    <string name="loading_progress">Loading account information</string>
+    <string name="password">Password</string>
+    <string name="password_hint">Enter your password</string>
+
+    <!-- Error State Strings -->
+    <string name="error_title">Something went wrong</string>
+    <string name="error_message_default">We encountered an issue. Please try again.</string>
+    <string name="error_network">Network connection error</string>
+    <string name="error_authentication">Authentication failed</string>
+    <string name="error_server">Server error occurred</string>
+    <string name="error_icon_description">Error indicator</string>
+    <string name="retry_button_description">Retry the failed operation</string>
+
+    <!-- Missing UI Strings -->
+    <string name="navigate">Navigate</string>
+    <string name="create_account">Create Account</string>
+    <string name="link_account">Link Account</string>
+    <string name="generate_pin">Generate PIN</string>
+    <string name="refresh">Refresh</string>
+    <string name="cross_device_sync_icon">Cross-device sync icon</string>
+    <string name="cross_device_sync">Cross-Device Sync</string>
+    <string name="cross_device_sync_description">Sync your data across devices</string>
+    <string name="pin_generation_description">Generate a PIN code for device linking</string>
+    <string name="your_pin_code">Your PIN Code</string>
+    <string name="timer_icon">Timer icon</string>
+    <string name="pin_usage_instructions">Use this PIN on other devices to link accounts</string>
+    <string name="new_pin">New PIN</string>
+    <string name="generating_pin">Generating PIN…</string>
+    <string name="discord_icon">Discord icon</string>
+    <string name="discord">Discord</string>
+    <string name="discord_avatar">Discord avatar</string>
+    <string name="unlink_account">Unlink Account</string>
+    <string name="discord_not_connected_description">Connect your Discord account for enhanced features</string>
+    <string name="discord_benefits_title">Discord Benefits</string>
+    <string name="discord_benefit_leaderboard">• Share achievements on Discord</string>
+    <string name="discord_benefit_share">• Share gameplay moments</string>
+    <string name="processing">Processing…</string>
+    <string name="retroachievements_icon">RetroAchievements icon</string>
+    <string name="retroachievements">RetroAchievements</string>
+    <string name="ra_avatar">RetroAchievements avatar</string>
+    <string name="ra_not_logged_in_description">Login to track achievements and progress</string>
+    <string name="ra_benefits_title">RetroAchievements Benefits</string>
+    <string name="ra_benefit_achievements">• Unlock achievements</string>
+    <string name="ra_benefit_leaderboards">• Compete on leaderboards</string>
+    <string name="ra_benefit_progress">• Track your progress</string>
+    <string name="ra_login_dialog_description">Enter your RetroAchievements credentials</string>
+    <string name="ra_create_account_link">Don\'t have an account? Create one here</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="account_management_summary">Manage your connected accounts and data</string>
+    <string name="google_account">Google</string>
+    <string name="email_verified">Email Verified</string>
+    <string name="verified">Verified</string>
+
+    <!-- Focus navigation strings -->
+    <string name="focused_element">Focused element</string>
+    <string name="focused_format">Focused: %1$s</string>
+
+    <!-- Error handling improvements -->
+    <string name="retry">Retry</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="more_info">More Info</string>
+    <string name="copy_to_clipboard">Copy to Clipboard</string>
+    <string name="cancel_loading">Cancel Loading</string>
+
+    <!-- Connection errors -->
+    <string name="connection_error_title">Connection Error</string>
+    <string name="network_connection_error">Network connection failed. Please check your internet connection.</string>
+    <string name="check_internet_connection">Check your internet connection and try again</string>
+    <string name="discord_connection_failed">Discord connection failed</string>
+    <string name="discord_oauth_troubleshooting">Make sure you have the Discord app installed or try using a web browser</string>
+    <string name="retroachievements_api_error">RetroAchievements server connection failed</string>
+    <string name="check_credentials_and_connectivity">Check your username/password and internet connection</string>
+    <string name="authentication_service_error">Authentication service is temporarily unavailable</string>
+    <string name="try_again_or_contact_support">Please try again later or contact support</string>
+    <string name="unexpected_error_occurred">An unexpected error occurred</string>
+    <string name="please_try_again_later">Please try again later</string>
+    <string name="suggested_solution">Suggested solution</string>
+
+    <!-- Loading timeout -->
+    <string name="loading_timeout_title">Loading Timeout</string>
+    <string name="loading_timeout_message">The operation is taking longer than expected. This might be due to a slow internet connection or server issues.</string>
+
+    <!-- Error details -->
+    <string name="error_details_title">Error Details</string>
+    <string name="error_report">Error Report</string>
+    <string name="error_details_copied">Error details copied to clipboard</string>
+    <string name="failed_to_copy_error">Failed to copy error details</string>
+    <string name="failed_to_update_profile">Failed to update profile information</string>
+
+    <!-- Report Reproduction Feature -->
+    <string name="reproduce_report">Reproduce Report</string>
+    <string name="report_list_title">Report List</string>
+    <string name="no_reports">No reports available</string>
+    <string name="downloading_attachments">Downloading attachments</string>
+    <string name="download_complete">Download complete</string>
+    <string name="emulation_rating">Emulation Rating</string>
+    <string name="screenshot">Screenshot</string>
+    <string name="attachments">Attachments</string>
+    <string name="reproducible">Reproducible</string>
+    <string name="savestate">Save State</string>
+    <string name="memory">Memory</string>
+    <string name="reproduce_report_confirm">This will download the report attachments and launch the emulator to reproduce the issue. Continue?</string>
+    <string name="report_not_reproducible">This report does not have the required files to reproduce the issue</string>
+    <string name="ready_to_reproduce">Ready to Reproduce</string>
+    <string name="start_emulator">Start Emulator</string>
+
+    <!-- Video Setting Restart Confirmation -->
+    <string name="restart_required_title">Restart Required</string>
+    <string name="restart_required_message">Video setting has been changed. The emulator needs to restart for the change to take effect. Do you want to restart now?</string>
+
+    <!-- Admin Notification Channel -->
+    <string name="notification_channel_admin_reports">Admin Report Notifications</string>
+    <string name="notification_channel_admin_reports_desc">Notifications for new user reports (admin only)</string>
+
+    <!-- Release Announcement Notification Channel -->
+    <string name="notification_channel_release">Release Announcements</string>
+    <string name="notification_channel_release_desc">Notifications about new YabaSanshiro releases</string>
+
+    <!-- Firebase Login Required for RetroAchievements -->
+    <string name="firebase_login_required_title">Sign In Required</string>
+    <string name="firebase_login_required_for_ra_message">Please sign in to your YabaSanshiro account first before logging in to RetroAchievements.</string>
+
+    <!-- BIOS File Picker -->
+    <string name="builtin_bios">Built-in BIOS</string>
+    <string name="select_bios_file">Select BIOS File</string>
+    <string name="bios_type_builtin">Use Built-in BIOS</string>
+    <string name="bios_type_file">Use External BIOS File</string>
+    <string name="bios_file_selected">Selected: %1$s</string>
+    <string name="bios_file_not_selected">No file selected</string>
+    <string name="bios_unknown_warning">Warning: Unrecognized BIOS file. Compatibility may vary.</string>
+    <string name="bios_copy_failed">Failed to copy BIOS file</string>
+    <string name="bios_copy_success">BIOS file copied successfully</string>
+    <string name="bios_file_not_found">BIOS file not found. Using built-in BIOS.</string>
+    <string name="bios_validating">Validating BIOS file...</string>
+    <string name="extended_memory_disabled_notice">Note: Extended backup memory (8MB) is not available when using external BIOS file.</string>
+    <string name="bios_picker_title">BIOS Selection</string>
+    <string name="available_bios_files">Available BIOS Files:</string>
+    <string name="no_bios_files">No BIOS files added yet</string>
+    <string name="add_bios_file">Add BIOS File</string>
+    <string name="bios_verified">Verified</string>
+    <string name="bios_unverified">Unverified</string>
+    <string name="confirm_delete_bios">Delete this BIOS file?</string>
+    <string name="bios_deleted">BIOS file deleted</string>
+    <string name="bios_zip_extracted">Extracted %1$d files (%2$d verified)</string>
+    <string name="bios_zip_no_files">No valid BIOS files found in ZIP</string>
+
+    <!-- Backup Manager -->
+    <string name="backup_manager">Backup Manager</string>
+    <string name="tab_internal">Internal</string>
+    <string name="tab_external">External</string>
+    <string name="tab_cloud">Cloud</string>
+    <string name="tab_local">Local</string>
+    <string name="tab_shared">Shared</string>
+    <string name="select_copy_destination">Select copy destination</string>
+    <string name="copy_to">Copy to\u2026</string>
+    <string name="backup_file_selector_hint">Backup file</string>
+    <string name="no_backups_found">No backups found</string>
+    <string name="sign_in_required">Sign in required to access cloud backups</string>
+    <string name="sign_in_to_browse_shared">Sign in to browse shared backups from the community</string>
+    <string name="more_options">More options</string>
+    <string name="export_backup">Export</string>
+    <string name="share_backup">Share</string>
+    <string name="import_backup">Import</string>
+    <string name="search_shared_backups">Search by game title or product number</string>
+    <string name="no_shared_backups_found">No shared backups found</string>
+    <string name="rate_button">Rate</string>
+    <string name="rate_backup">Rate Backup</string>
+    <string name="share_backup_title">Share Backup</string>
+    <string name="game_title">Game Title</string>
+    <string name="product_number">Product Number</string>
+    <string name="comment">Comment</string>
+    <string name="confirm">Confirm</string>
+    <string name="delete_backup_title">Delete Backup</string>
+    <string name="delete_backup_confirm">Are you sure you want to delete \'%1$s\'?</string>
+    <string name="delete_shared_backup_confirm">Are you sure you want to remove \'%1$s\' from public sharing?</string>
+    <string name="backup_copied">Backup copied successfully</string>
+    <string name="backup_uploaded">Backup uploaded to cloud</string>
+    <string name="backup_downloaded">Backup downloaded</string>
+    <string name="backup_exported">Backup exported successfully</string>
+    <string name="backup_imported">Backup imported successfully</string>
+    <string name="backup_shared">Backup shared successfully</string>
+    <string name="backup_deleted">Backup deleted</string>
+    <string name="rating_submitted">Thank you for rating!</string>
+    <string name="cloud_backups_count">Cloud Backups: %1$d / %2$d</string>
+    <string name="storage_status">%1$s free of %2$s</string>
+    <string name="select_file">Select File</string>
+    <string name="share_description_hint">Description (e.g. 100% save, boss clear...)</string>
+    <string name="game_title_required">Game title is required</string>
+    <string name="sort_by_rating">Rating</string>
+    <string name="sort_by_date_shared">Recent</string>
+    <string name="my_library_filter">My Library</string>
+
+    <!-- Backup search and sort -->
+    <string name="search_backup">Search backups</string>
+    <string name="sort_backups">Sort</string>
+    <string name="sort_by_name_asc">Name (A-Z)</string>
+    <string name="sort_by_name_desc">Name (Z-A)</string>
+    <string name="sort_by_date_desc">Newest first</string>
+    <string name="sort_by_date_asc">Oldest first</string>
+    <string name="shared_date">Shared: %1$s</string>
+    <string name="shared_backup_detail">Backup Details</string>
+
+    <!-- Backup overwrite confirmation -->
+    <string name="backup_overwrite_title">Overwrite Backup</string>
+    <string name="backup_overwrite_message">\'%1$s\' already exists in %2$s. Do you want to overwrite it?</string>
+
+    <!-- Backup file display names -->
+    <string name="backup_file_memory_filebios">Internal BIOS Standard 32kByte</string>
+    <string name="backup_file_memory_standard">Internal Extended 8MByte</string>
+    <string name="backup_file_cartridge_4mbit">Cartridge 4Mbit Backup Ram</string>
+    <string name="backup_file_cartridge_8mbit">Cartridge 8Mbit Backup Ram</string>
+    <string name="backup_file_cartridge_16mbit">Cartridge 16Mbit Backup Ram</string>
+    <string name="backup_file_cartridge_32mbit">Cartridge 32Mbit Backup Ram</string>
+    <!-- Add Game Bottom Sheet -->
+    <string name="add_game">Add Game</string>
+    <string name="import_method">IMPORT METHOD</string>
+    <string name="select_file_desc">Single ROM file</string>
+    <string name="add_folder">Add Folder</string>
+    <string name="add_folder_desc">Add to scan list</string>
+    <string name="scan_folders">SCAN FOLDERS</string>
+    <string name="scan_all">Scan All</string>
+    <string name="supported_formats">Supported Formats</string>
+    <string name="supported_formats_list">ISO, BIN/CUE, MDF/MDS, CHD, ZIP, 7z, RAR</string>
+    <string name="files_count">%d files</string>
+    <string name="delete_folder_confirm">Remove this folder from the scan list?</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_games">Games</string>
+    <string name="nav_backup">Backup</string>
+    <string name="nav_add">Add</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_account">Account</string>
+
+    <!-- Settings: Exit and Refresh DB -->
+    <string name="pref_exit_title">Exit Application</string>
+    <string name="pref_exit_summary">Close YabaSanshiro</string>
+    <string name="pref_refresh_db_title">Refresh Game List</string>
+    <string name="pref_refresh_db_summary">Rescan folders and update the game database</string>
+
+    <!-- Settings Category Names -->
+    <string name="setting_display">Display</string>
+    <string name="setting_rendering">Rendering</string>
+    <string name="setting_performance">Performance</string>
+    <string name="input_device_title_player1_controls">Player 1 Controls</string>
+    <string name="input_device_title_player2_controls">Player 2 Controls</string>
+
+    <!-- Settings Summaries - General -->
+    <string name="pref_bios_summary">Select the BIOS file used by the emulator</string>
+    <string name="pref_cart_summary">Select expansion cartridge type</string>
+    <string name="pref_extend_internal_memory_summary_on">Internal memory expanded to 8MB</string>
+    <string name="pref_extend_internal_memory_summary_off">Using standard internal memory size</string>
+    <string name="pref_cpu_summary">Select the CPU emulation engine</string>
+    <string name="pref_auto_state_save_summary_on">State will be saved automatically on exit</string>
+    <string name="pref_auto_state_save_summary_off">State will not be saved on exit</string>
+
+    <!-- Settings Summaries - Display -->
+    <string name="pref_resolution_summary">Set the rendering resolution</string>
+    <string name="pref_aspect_rate_summary">Set the display aspect ratio</string>
+    <string name="pref_rbg_resolution_summary">Set the rotating background screen resolution</string>
+    <string name="pref_landscape_summary_on">Screen is locked to landscape orientation</string>
+    <string name="pref_landscape_summary_off">Screen orientation follows device rotation</string>
+    <string name="pref_rotate_screen_summary_on">Screen is rotated 90 degrees</string>
+    <string name="pref_rotate_screen_summary_off">Screen uses normal orientation</string>
+    <string name="pref_immersive_mode_summary_on">Status bar and navigation bar are hidden</string>
+    <string name="pref_immersive_mode_summary_off">Status bar and navigation bar are visible</string>
+
+    <!-- Settings Summaries - Rendering -->
+    <string name="pref_video_summary">Select the graphics rendering engine</string>
+    <string name="pref_filter_summary">Apply post-processing video filter</string>
+    <string name="pref_polygon_generation_summary">Select polygon rendering method</string>
+    <string name="pref_use_compute_shader_summary_on">Compute shader enabled for GPU acceleration</string>
+    <string name="pref_use_compute_shader_summary_off">Compute shader disabled</string>
+
+    <!-- Settings Summaries - Performance -->
+    <string name="pref_fps_summary_on">FPS counter is displayed on screen</string>
+    <string name="pref_fps_summary_off">FPS counter is hidden</string>
+    <string name="pref_frameskip_summary_on">Frames may be skipped for better performance</string>
+    <string name="pref_frameskip_summary_off">All frames are rendered</string>
+    <string name="pref_frameLimit_summary">Set the emulation speed limit</string>
+
+    <!-- Settings Summaries - Player Input -->
+    <string name="pref_input_device_summary">Select the input device for this player</string>
+    <string name="pref_input_setting_summary">Configure button mapping for the selected device</string>
+    <string name="pref_onscreen_pad_summary">Customize on-screen pad layout and sensitivity</string>
+
+    <!-- Settings Summaries - Sound -->
+    <string name="pref_audio_summary_on">Audio output is enabled</string>
+    <string name="pref_audio_summary_off">Audio output is muted</string>
+    <string name="pref_sound_engine_summary">Select the sound emulation engine</string>
+    <string name="pref_scsp_time_sync_summary">Select how sound timing is synchronized</string>
+    <string name="pref_scsp_sync_per_frame_summary">Number of SCSP synchronization cycles per frame (1-255)</string>
+
+    <!-- Settings Summaries - RetroAchievements -->
+    <string name="pref_retroachievements_login_summary">Sign in to your RetroAchievements account</string>
+    <string name="pref_retroachievements_logout_summary">Sign out from RetroAchievements</string>
+
+    <!-- Pro Gate / Subscription Dialog -->
+    <string name="pro_gate_title">Pro Feature</string>
+    <string name="pro_gate_message">This feature requires the Pro version.\nChoose an option to unlock:</string>
+    <string name="pro_gate_subscribe">Subscribe</string>
+    <string name="pro_gate_subscribe_with_price">Subscribe (%s/year)</string>
+    <string name="pro_gate_buy_pro">Buy Pro version</string>
+    <string name="game_list_limit_banner">To view all games, please subscribe or purchase the Pro version.</string>
+
+    <!-- Migration dialog -->
+    <string name="migration_dialog_title">Major Update</string>
+    <string name="migration_dialog_message">Settings have been reset due to a major update. We apologize for the inconvenience.</string>
+    <string name="pro_feature_only">This feature requires Pro subscription.</string>
+
+    <!-- Pro Gate Dialog (redesigned) -->
+    <string name="pro_gate_dialog_title">Unlock YabaSanshiro Pro</string>
+    <string name="pro_gate_dialog_subtitle">Get the full experience with these premium features</string>
+    <string name="pro_feature_unlimited_games">Unlimited games (free: 3 games max)</string>
+    <string name="pro_feature_cloud_backup">Cloud backup (up to 256 saves)</string>
+    <string name="pro_feature_cheats">Action Replay / Cloud cheats</string>
+    <string name="pro_feature_shared_backup">Shared backup import and rating</string>
+    <string name="pro_feature_no_ads">No advertisements</string>
+    <string name="pro_gate_hero_image_desc">YabaSanshiro Pro</string>
+
+    <!-- RetroAchievements -->
+    <string name="ra_icon_description">RetroAchievements</string>
+    <string name="ra_achievement_format">%1$d/%2$d</string>
+    <string name="ra_achievement_label">Achievements</string>
+    <string name="ra_not_supported">Not supported</string>
+    <string name="ra_loading">Loading…</string>
+    <string name="leaderboards">Leaderboards</string>
+    <string name="softcore">Softcore</string>
+    <string name="hardcore">Hardcore</string>
+    <string name="select_disc_for_swap">Select Disc</string>
+    <string name="no_games_registered">No games registered. Add games from the main screen first.</string>
+
+    <!-- Report sign-in choice dialog -->
+    <string name="report_auth_choice_title">How do you want to submit?</string>
+    <string name="report_auth_choice_message">Signing in lets you review your reports later and receive replies from the developer. You can also submit anonymously.</string>
+    <string name="report_auth_choice_sign_in">Sign in &amp; submit</string>
+    <string name="report_auth_choice_anonymous">Submit anonymously</string>
+    <string name="report_auth_anonymous_display_name">Anonymous</string>
+    <string name="report_auth_anonymous_failed">Could not start an anonymous session. Please try again.</string>
+
+    <!-- Experimental feature notice -->
+    <string name="experimental_notice_title">Experimental feature enabled</string>
+    <string name="experimental_notice_message">\"%1$s\" is experimental. Some games may show graphical glitches.\n\nIf you find a problem, please report it — your reports help us improve. While playing, open the menu and choose \"Report\"; a screenshot and the current state are attached automatically. No sign-in is required.</string>
+    <string name="experimental_notice_ok">Got it</string>
+
+    <!-- Backup Share Link -->
+    <string name="share_backup_link_subject">Shared Saturn save</string>
+    <string name="share_backup_link_text">%1$s save data shared\n%2$s\n%3$s</string>
+    <string name="share_backup_link_chooser">Share save link</string>
+    <string name="sharing_backup_progress">Sharing backup…</string>
+    <string name="share_public_consent_title">Make this save public?</string>
+    <string name="share_public_consent_message">Sharing uploads this save so anyone can find and download it from the community list, not only people who have the link. Continue?</string>
+    <string name="import_shared_backup_title">Import shared save</string>
+    <string name="import_shared_backup_not_found">This shared save was not found. It may have been removed.</string>
+    <string name="import_shared_backup_sign_in">Sign in to import this save</string>
+    <string name="import_shared_rom_missing_title">Game not in your library</string>
+    <string name="import_shared_rom_missing_message">This save is for \"%1$s\", which is not in your library. You can still import it and use it once you add the game. Continue?</string>
+
+    <!-- App News Popup -->
+    <string name="news_close">Close</string>
+    <string name="news_read_more">Read more</string>
+    <string name="news_update">Update</string>
+</resources>

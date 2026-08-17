@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Landscape version: smaller logo positioned at top to avoid overlapping with text -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" android:opacity="opaque">
+
+    <!-- The background color, preferably the same as your normal theme -->
+    <item android:drawable="@color/title_back"/>
+
+    <!-- Your product logo - smaller and positioned at top for landscape -->
+    <item android:top="32dp">
+        <bitmap
+            android:src="@drawable/startup"
+            android:gravity="top|center_horizontal"
+            android:width="200dp"
+            android:height="200dp"/>
+    </item>
+</layer-list>

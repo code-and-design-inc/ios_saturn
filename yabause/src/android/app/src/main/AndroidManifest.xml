@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!--
+        Copyright 2019 devMiyax(smiyaxdev@gmail.com)
+
+        This file is part of YabaSanshiro.
+
+        YabaSanshiro is free software; you can redistribute it and/or modify
+        it under the terms of the GNU General Public License as published by
+        the Free Software Foundation; either version 2 of the License, or
+        (at your option) any later version.
+
+        YabaSanshiro is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU General Public License for more details.
+
+        You should have received a copy of the GNU General Public License
+        along with YabaSanshiro; if not, write to the Free Software
+        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+    -->
+    <uses-permission-sdk-23 android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission-sdk-23 android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="com.android.vending.BILLING" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
+    <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA" />
+    <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA" />
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.faketouch"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.nfc"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.sensor"
+        android:required="false" />
+    <uses-feature android:name="android.hardware.gamepad" />
+    <uses-feature android:glEsVersion="0x00030000" />
+    <uses-feature
+        android:name="android.hardware.opengles.aep"
+        android:required="false" />
+
+
+    <application
+        android:name="org.uoyabause.android.YabauseApplication"
+        android:icon="@mipmap/ic_launcher"
+        android:isGame="true"
+        android:label="@string/app_name"
+        android:logo="@drawable/banner"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        android:hasFragileUserData="true"
+        tools:targetApi="34">
+
+        <property
+            android:name="android.adservices.AD_SERVICES_CONFIG"
+            android:resource="@xml/gma_ad_services_config"
+            tools:replace="android:resource" />
+
+        <activity
+            android:name="org.uoyabause.android.SettingsActivity"
+            android:label="@string/title_activity_yaba_snashiro_settings" />
+        <activity android:name="org.uoyabause.android.AdActivity" />
+
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+        <meta-data
+            android:name="com.google.android.gms.ads.AD_MANAGER_APP"
+            android:value="true" />
+<!--
+        <meta-data
+            android:name="AA_DB_NAME"
+            android:value="localgameinfo2.db" />
+        <meta-data
+            android:name="AA_DB_VERSION"
+            android:value="3" />
+        <meta-data
+            android:name="AA_MODELS"
+            android:value="org.uoyabause.android.GameInfo, org.uoyabause.android.GameStatus, org.uoyabause.android.Cheat" />
+-->
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="true" />
+
+        <activity
+            android:name="org.uoyabause.android.tv.GameSelectActivity"
+            android:banner="@drawable/banner"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/title_activity_game_select"
+            android:logo="@drawable/banner"
+            android:theme="@style/Theme.Gameselect.Leanback" />
+        <!--
+        <activity
+                    android:theme="@style/AppTheme"
+            android:name=".Home"
+            android:logo="@drawable/banner"
+            android:screenOrientation="landscape">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+                        android:process=":emulationmain"
+                        android:theme="@style/Theme.Gameselect.Leanback"m
+            android:process=":emulationmain"
+        </activity>
+        -->
+        <activity android:name="org.uoyabause.android.YabauseGameSelectActivity" />
+        <activity
+            android:name="org.uoyabause.android.Yabause"
+            android:configChanges="orientation|keyboardHidden|screenSize|keyboard"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.VIEW" />
+            </intent-filter>
+        </activity>
+        
+        <activity
+            android:name="org.uoyabause.android.PadTestActivity"
+            android:configChanges="orientation|keyboardHidden" />
+
+        <uses-library
+            android:name="com.sec.android.app.multiwindow"
+            android:required="false" />
+
+        <meta-data
+            android:name="com.sec.android.support.multiwindow"
+            android:value="true" />
+
+        <activity android:name="org.uoyabause.android.tv.BrowseErrorActivity" />
+        <activity
+            android:name="com.google.android.gms.ads.AdActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
+            android:theme="@android:style/Theme.Translucent" />
+
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="@string/ad_app_id" />
+
+        <service android:name="org.uoyabause.android.Notification"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <receiver android:name="org.uoyabause.android.tv.DownloadReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="org.uoyabause.download.COMPLETE" />
+                <action android:name="org.uoyabause.download.FAILED" />
+            </intent-filter>
+        </receiver>
+
+        <activity
+            android:name="org.uoyabause.android.phone.GameSelectActivityPhone"
+            android:label="@string/title_activity_game_select_phone"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+
+            <!--
+                <intent-filter>
+                    <action android:name="android.intent.action.MAIN" />
+                    <category android:name="android.intent.category.LAUNCHER" />
+                 </intent-filter>
+            -->
+
+            <!-- Intent filter for FCM notification click action -->
+            <intent-filter>
+                <action android:name="OPEN_REPORT_LIST" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".StartupActivity"
+            android:banner="@drawable/banner"
+            android:label="@string/app_name"
+            android:noHistory="true"
+            android:theme="@style/AppTheme.Launcher"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data
+                    android:host="@string/host"
+                    android:scheme="@string/schema" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="yabasanshiro" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="saturngame"
+                    android:host="yabasanshiro" />
+            </intent-filter>
+            <!-- App Links: https backup share links (auto-verified via assetlinks.json) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="https"
+                    android:host="www.yabasanshiro.com"
+                    android:pathPrefix="/backup/" />
+            </intent-filter>
+            <!-- Custom scheme fallback for backup share links -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="yabasanshiro"
+                    android:host="backup" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name="org.uoyabause.android.tv.RunOnInstallReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.media.tv.action.INITIALIZE_PROGRAMS" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
+
+        <meta-data
+            android:name="com.google.android.gms.games.APP_ID"
+            android:value="@string/game_id" />
+
+        <!-- Discord OAuth2 Redirect Activity -->
+        <activity
+            android:name="org.uoyabause.android.auth.DiscordOAuthRedirectActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:label="@string/discord_oauth_redirect_title"
+            android:theme="@style/AppTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="yabasanshiro"
+                    android:host="discord-auth" />
+            </intent-filter>
+        </activity>
+
+        <!-- Discord Link Activity -->
+        <activity
+            android:name="org.uoyabause.android.auth.DiscordLinkActivity"
+            android:exported="false"
+            android:label="@string/link_discord_account"
+            android:theme="@style/AppTheme"
+            android:parentActivityName="org.uoyabause.android.phone.GameSelectActivityPhone">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="org.uoyabause.android.phone.GameSelectActivityPhone" />
+        </activity>
+
+        <!-- Report List Activity -->
+        <activity
+            android:name="org.uoyabause.android.ReportListActivity"
+            android:exported="false"
+            android:label="@string/report_list_title"
+            android:theme="@style/AppTheme"
+            android:parentActivityName="org.uoyabause.android.phone.GameSelectActivityPhone">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="org.uoyabause.android.phone.GameSelectActivityPhone" />
+        </activity>
+
+    </application>
+
+</manifest>

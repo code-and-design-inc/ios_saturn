@@ -1,0 +1,95 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+// VDP1 Compute Rasterizer: コマンド bbox -> タイル振り分け
+// canonical reference; production build uses kBinShaderSrc embedded in
+// Vdp1ComputeRasterizer.cpp. Keep this file byte-equivalent in semantics.
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+#define MAX_CMDS_PER_TILE 64
+#define TYPE_NOOP             0u
+#define TYPE_NORMAL_SPRITE    1u
+#define TYPE_SCALED_SPRITE    2u
+#define TYPE_DISTORTED_SPRITE 3u
+#define TYPE_POLYGON          4u
+#define TYPE_POLYLINE         5u
+#define TYPE_LINE             6u
+
+struct Vdp1Cmd {
+    uint  cmdType;
+    uint  pmod;
+    uint  color;
+    uint  srca;
+    uvec2 charSize;
+    uvec2 gouraudAddr;
+    ivec2 v0, v1, v2, v3;
+    ivec4 bbox;
+    ivec4 systemClip;
+    ivec4 userClip;
+    uint  clipMode;
+    uint  flip;
+    uint  flags;
+    uint  vdp2Attrs;       // F18: bits 0:15 normalShadow, 16:31 attrFlags
+    uint  priority;        // F18
+    uint  colorcl;         // F18
+    uint  pad6;
+    uint  pad7;
+};
+
+struct TileCount {
+    uint count;
+    uint _pad0, _pad1, _pad2;
+};
+
+layout(std430, binding = 0) restrict readonly buffer CmdSSBO  { Vdp1Cmd cmds[]; };
+layout(std430, binding = 1) coherent buffer TileCountSSBO { TileCount tiles[]; };
+layout(std430, binding = 2) writeonly buffer TileListSSBO { uint cmdIdx[]; };
+// F17: single uint counter incremented when a cmd is dropped because its tile
+// already has MAX_CMDS_PER_TILE entries. Std430 padding to 16B matches host
+// OVERFLOW_SSBO_SIZE; only counter is read from CPU.
+layout(std430, binding = 3) coherent buffer OverflowSSBO {
+    uint overflowCount;
+    uint _pad0, _pad1, _pad2;
+} overflow;
+
+layout(push_constant) uniform Push {
+    uint numCmds;
+    uint numTilesX;
+    uint numTilesY;
+    uint tileSize;
+} pc;
+
+void main() {
+    uint cid = gl_GlobalInvocationID.x;
+    if (cid >= pc.numCmds) return;
+    Vdp1Cmd c = cmds[cid];
+    // All non-NOOP cmd types bin. Per-type rasterization happens in the
+    // tile_shade shader; binning is purely a bbox->tile scatter.
+    if (c.cmdType == TYPE_NOOP) return;
+
+    ivec4 bbox = c.bbox;
+    bbox.x = max(bbox.x, 0);
+    bbox.y = max(bbox.y, 0);
+    bbox.z = min(bbox.z, c.systemClip.x);
+    bbox.w = min(bbox.w, c.systemClip.y);
+    if (bbox.z < bbox.x || bbox.w < bbox.y) return;
+
+    int tx0 = clamp(bbox.x / int(pc.tileSize), 0, int(pc.numTilesX) - 1);
+    int ty0 = clamp(bbox.y / int(pc.tileSize), 0, int(pc.numTilesY) - 1);
+    int tx1 = clamp(bbox.z / int(pc.tileSize), 0, int(pc.numTilesX) - 1);
+    int ty1 = clamp(bbox.w / int(pc.tileSize), 0, int(pc.numTilesY) - 1);
+
+    for (int ty = ty0; ty <= ty1; ++ty) {
+        for (int tx = tx0; tx <= tx1; ++tx) {
+            uint tileIdx = uint(ty) * pc.numTilesX + uint(tx);
+            uint slot = atomicAdd(tiles[tileIdx].count, 1u);
+            if (slot < uint(MAX_CMDS_PER_TILE)) {
+                cmdIdx[tileIdx * uint(MAX_CMDS_PER_TILE) + slot] = cid;
+            } else {
+                // F17: tile already at capacity — record the drop so the
+                // host can flag overcrowded scenes in dev builds.
+                atomicAdd(overflow.overflowCount, 1u);
+            }
+        }
+    }
+}

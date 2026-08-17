@@ -1,0 +1,44 @@
+<en-US>
+- Relaxed launch restrictions from Daijisho and ES-DE
+- Fixed on-screen pad issues
+</en-US>
+<de-DE>
+- Startbeschränkungen von Daijisho und ES-DE gelockert
+- Fehler bei On-Screen-Pad behoben
+</de-DE>
+<es-419>
+- Se relajaron las restricciones de inicio desde Daijisho y ES-DE
+- Se corrigieron problemas del pad en pantalla
+</es-419>
+<es-ES>
+- Se han relajado las restricciones de inicio desde Daijisho y ES-DE
+- Se han corregido problemas del pad en pantalla
+</es-ES>
+<fr-FR>
+- Assouplissement des restrictions de lancement depuis Daijisho et ES-DE
+- Correction des problèmes du pad à l'écran
+</fr-FR>
+<id>
+- Melonggarkan pembatasan peluncuran dari Daijisho dan ES-DE
+- Memperbaiki masalah pad di layar
+</id>
+<it-IT>
+- Allentate le restrizioni di avvio da Daijisho e ES-DE
+- Risolti i problemi del pad su schermo
+</it-IT>
+<ja-JP>
+- Daijisho, ES-DEからの起動制限を緩くした
+- オンスクリーンパッドの不具合を修正
+</ja-JP>
+<pt-BR>
+- Relaxadas as restrições de inicialização do Daijisho e ES-DE
+- Corrigidos problemas do controle na tela
+</pt-BR>
+<th>
+- ผ่อนปรนข้อจำกัดการเปิดใช้งานจาก Daijisho และ ES-DE
+- แก้ไขปัญหาแพดบนหน้าจอ
+</th>
+<zh-CN>
+- 放宽了从 Daijisho 和 ES-DE 启动的限制
+- 修复了屏幕控制器的问题
+</zh-CN>

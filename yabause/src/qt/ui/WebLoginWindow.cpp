@@ -1,0 +1,250 @@
+#include "WebLoginWindow.h"
+#include "ui_WebLoginWindow.h"
+//#include <qwebengineprofile.h>
+//#include <qwebenginecookiestore.h>
+#include <QMessageBox>
+
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkReply>
+
+#include <firebase/app.h>
+#include <firebase/auth.h>
+#include <firebase/database.h>
+#include <firebase/variant.h>
+
+#include "UIYabause.h"
+ 
+#include <iostream>
+#include <string>
+
+
+using firebase::database::DataSnapshot;
+using firebase::Variant;
+
+class YabaAuthStateListenerx : public firebase::auth::AuthStateListener {
+ public:
+ WebLoginWindow* program_context;
+  void OnAuthStateChanged(firebase::auth::Auth* auth) override {
+    firebase::auth::User user = auth->current_user();
+    if (!user.is_valid()) {
+      // User is signed in
+      printf("OnAuthStateChanged: signed_in as %s\n", user.display_name().c_str());
+      firebase::database::Database *database = ::firebase::database::Database::GetInstance(UIYabause::getFirebaseApp());
+      firebase::database::DatabaseReference dbref = database->GetReference();
+      //QMetaObject::invokeMethod(program_context,"close",Qt::QueuedConnection);
+    } else {
+      // User is signed out
+      printf("OnAuthStateChanged: signed_out\n");
+    }
+    // ...
+  }
+};
+
+
+WebLoginWindow::WebLoginWindow(QWidget *parent) :
+    QDialog(parent)
+{
+    authlistner = new YabaAuthStateListenerx();
+    authlistner->program_context = this;
+    setupUi(this);
+    tx = nullptr;
+
+    firebase::auth::Auth* auth = firebase::auth::Auth::GetAuth(UIYabause::getFirebaseApp());
+    firebase::auth::User user = auth->current_user();
+    if (user.is_valid()) {
+        QMessageBox msgBox(parent);
+        msgBox.setText(tr("Are you sure to sigin out?"));
+        msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        msgBox.setDefaultButton(QMessageBox::No);
+        int res = msgBox.exec();
+        if (res == QMessageBox::Yes){
+            auth->SignOut();
+        }
+        QMetaObject::invokeMethod(this, "close", Qt::QueuedConnection);
+        return;
+    }else{
+    }
+
+//    connect(this, SIGNAL(setResult(QString,QString)), this, SLOT(getResult(QString,QString)));
+    connect(this, SIGNAL(failToLogin(QString)), this, SLOT(onFailedToLogin(QString)));
+//    connect(this, SIGNAL(reqFetchStatus()), this, SLOT(fetchStatus()));
+
+    tx = nullptr;
+    login_cancel = false;
+
+}
+
+class YMessageBox : public QMessageBox
+{
+public:
+  explicit YMessageBox(QWidget *parent = Q_NULLPTR) {
+  };
+
+  int timeout = 0;
+  bool autoClose = false;
+  int currentTime = 0;
+  
+  void setAutoClose(bool b) {
+    autoClose = true;
+  }
+
+  void setTimeout(int t) {
+    timeout = t;
+  }
+  
+  virtual void showEvent(QShowEvent * event) {
+    currentTime = 0;
+    if (autoClose) {
+      this->startTimer(1000);
+    }
+  }
+  virtual void timerEvent(QTimerEvent *event)
+  {
+    currentTime++;
+    if (currentTime >= timeout) {
+      this->done(0);
+    }
+  }
+};
+
+
+void WebLoginWindow::done(int r) {
+  if (isSignInOK) {
+    firebase::auth::Auth* auth = firebase::auth::Auth::GetAuth(UIYabause::getFirebaseApp());
+    firebase::auth::User user = auth->current_user();
+    if (user.is_valid()) {
+      // ���������郁�b�Z�[�W�E�B���h�E��\��
+      QDialog* msgDialog = new QDialog(this);
+      msgDialog->setWindowTitle("Sign-in Successful");
+
+      QString msg = "Signin is successful. \nHello! " + QString::fromStdString(user.display_name());
+
+      QLabel* label = new QLabel(msg, msgDialog);
+      label->setAlignment(Qt::AlignCenter);
+
+      QVBoxLayout* layout = new QVBoxLayout(msgDialog);
+      layout->addWidget(label);
+      msgDialog->setLayout(layout);
+      msgDialog->resize(300, 150);
+
+      // �^�C�}�[�Ŏ����I�ɕ���
+      QTimer::singleShot(3000, msgDialog, &QDialog::accept);  // 3�b��ɕ���
+
+      msgDialog->exec();
+    }
+  }
+  QDialog::done(r);
+}
+
+WebLoginWindow::~WebLoginWindow()
+{
+  if( authlistner != nullptr ){
+    firebase::auth::Auth* auth = firebase::auth::Auth::GetAuth(UIYabause::getFirebaseApp());
+    auth->RemoveAuthStateListener(authlistner);
+    delete authlistner;
+  }
+}
+
+
+void WebLoginWindow::getResult(QString id,QString error){
+    this->id = id;
+    WebLoginWindow *self = this;
+    firebase::auth::Auth* auth = firebase::auth::Auth::GetAuth(UIYabause::getFirebaseApp());
+    auth->AddAuthStateListener(authlistner);
+
+    firebase::auth::Credential credential =
+    firebase::auth::GoogleAuthProvider::GetCredential(this->id.toStdString().c_str(),nullptr);
+    firebase::Future<firebase::auth::User> result = auth->SignInWithCredential(credential);
+
+    result.OnCompletion(
+      [](const firebase::Future<firebase::auth::User>& result,
+         void* user_data) {
+        WebLoginWindow* program_context = (WebLoginWindow*)user_data;
+
+        QMetaObject::invokeMethod(program_context, "enableButtons", Qt::QueuedConnection);
+
+        if (result.status() == firebase::kFutureStatusComplete) {
+            if (result.error() == firebase::auth::kAuthErrorNone) {
+                firebase::auth::User user = *result.result();
+                std::string name = user.display_name();
+                std::string email = user.email();
+                std::string photo_url = user.photo_url();
+                std::string uid = user.uid();
+                program_context->isSignInOK = true;
+                QMetaObject::invokeMethod(program_context, "close", Qt::QueuedConnection);
+            }else{
+                printf("Failed: %s\n",result.error_message());
+                emit program_context->failToLogin(QString::fromUtf8(result.error_message()));
+            }
+        }
+      },
+    (void*)self);
+}
+
+void WebLoginWindow::enableButtons() {
+  this->ok->setDisabled(false);
+  this->cancel->setDisabled(false);
+}
+
+void WebLoginWindow::onFailedToLogin(QString errorMessage){
+  QMessageBox msgBox(this);
+  msgBox.setText(tr("Failed to Sign in.\n\nError: %1\n\nCheck if you are signed in on Android version and try again.").arg(errorMessage));
+  msgBox.setStandardButtons(QMessageBox::Ok);
+  int res = msgBox.exec();
+  QMetaObject::invokeMethod(this, "close", Qt::QueuedConnection);
+}
+
+void WebLoginWindow::on_cancel_clicked(){
+  this->close();
+}
+
+std::string getPin(const std::string & pin);
+
+void WebLoginWindow::on_ok_clicked()
+{
+  this->ok->setDisabled(true);
+  this->cancel->setDisabled(true);
+
+  QString pinnum = PinNumberEdit->text();
+
+  std::string body = getPin(pinnum.toStdString());
+  if (body == "error") {
+    QMessageBox msgBox(this);
+    msgBox.setText(tr("Wrong PIN"));
+    //msgBox.setText(rep->errorString());
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    int res = msgBox.exec();
+    this->ok->setDisabled(false);
+    this->cancel->setDisabled(false);
+    return;
+  }
+  else {
+    QString id = QString::fromStdString(body);
+    getResult(id, "");
+  }
+}
+
+void WebLoginWindow::onfinish(QNetworkReply *rep)
+{
+  
+    QVariant statusCode = rep->attribute( QNetworkRequest::HttpStatusCodeAttribute );
+    int status = statusCode.toInt();
+
+    if ( status != 200 )
+    {
+        QString reason = rep->attribute( QNetworkRequest::HttpReasonPhraseAttribute ).toString();
+        QMessageBox msgBox(this);
+        //msgBox.setText(tr("Wrong PIN"));
+        msgBox.setText(rep->errorString());
+        msgBox.setStandardButtons(QMessageBox::Ok);
+        int res = msgBox.exec();
+        this->ok->setDisabled(false);
+        this->cancel->setDisabled(false);
+        return;
+    }
+
+    QByteArray bts = rep->readAll();
+    QString id(bts);
+    getResult(id,"");
+}
+
