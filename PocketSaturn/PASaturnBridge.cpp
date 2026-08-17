@@ -31,7 +31,9 @@ extern "C" {
 #include "ygl.h"
 }
 
+#include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
@@ -199,6 +201,42 @@ struct AudioRing {
     }
 };
 
+// Wall-clock instrumentation. The renderer buckets wrap the VIDSoft entry
+// points through the VideoInterface_struct function table (vdp1.cpp/vdp2.cpp
+// call them via VIDCore), so the upstream renderer stays untouched.
+struct PerfCounters {
+    uint64_t frameNanosTotal = 0;
+    uint64_t frameNanosMax = 0;
+    uint64_t vdp1Nanos = 0;
+    uint64_t vdp2Nanos = 0;
+    uint64_t presentNanos = 0;
+    static constexpr int kRecent = 256;
+    uint64_t recent[kRecent] = {};
+    int recentIndex = 0;
+    int recentCount = 0;
+
+    void recordFrame(uint64_t ns) {
+        frameNanosTotal += ns;
+        if (ns > frameNanosMax) frameNanosMax = ns;
+        recent[recentIndex] = ns;
+        recentIndex = (recentIndex + 1) % kRecent;
+        if (recentCount < kRecent) recentCount++;
+    }
+    uint64_t recentP95() const {
+        if (recentCount == 0) return 0;
+        uint64_t sorted[kRecent];
+        std::copy(recent, recent + recentCount, sorted);
+        std::sort(sorted, sorted + recentCount);
+        return sorted[(recentCount * 95) / 100 >= recentCount ? recentCount - 1 : (recentCount * 95) / 100];
+    }
+};
+
+inline uint64_t nowNanos()
+{
+    return (uint64_t)std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
 struct Session {
     std::string biosPath;
     std::string discPath;
@@ -211,6 +249,7 @@ struct Session {
     uint64_t emulatedFrames = 0;
     uint64_t renderedFrames = 0;
     bool muted = false;
+    PerfCounters perf;
 };
 
 Session* g_session = nullptr;
@@ -231,6 +270,44 @@ const char* lastErrorCString()
     strncpy(g_lastErrorBuffer, g_lastError.c_str(), sizeof(g_lastErrorBuffer) - 1);
     g_lastErrorBuffer[sizeof(g_lastErrorBuffer) - 1] = 0;
     return g_lastErrorBuffer;
+}
+
+// Timing wrappers around the software renderer's entry points.
+void (*g_origVdp1DrawStart)(void) = nullptr;
+void (*g_origVdp2DrawScreens)(void) = nullptr;
+void (*g_origVdp2DrawEnd)(void) = nullptr;
+
+void timedVdp1DrawStart(void)
+{
+    const uint64_t t0 = nowNanos();
+    g_origVdp1DrawStart();
+    if (g_session) g_session->perf.vdp1Nanos += nowNanos() - t0;
+}
+
+void timedVdp2DrawScreens(void)
+{
+    const uint64_t t0 = nowNanos();
+    g_origVdp2DrawScreens();
+    if (g_session) g_session->perf.vdp2Nanos += nowNanos() - t0;
+}
+
+void timedVdp2DrawEnd(void)
+{
+    const uint64_t t0 = nowNanos();
+    g_origVdp2DrawEnd();
+    if (g_session) g_session->perf.presentNanos += nowNanos() - t0;
+}
+
+void installRendererTimers()
+{
+    if (!g_origVdp1DrawStart) {
+        g_origVdp1DrawStart = VIDSoft.Vdp1DrawStart;
+        g_origVdp2DrawScreens = VIDSoft.Vdp2DrawScreens;
+        g_origVdp2DrawEnd = VIDSoft.Vdp2DrawEnd;
+    }
+    VIDSoft.Vdp1DrawStart = timedVdp1DrawStart;
+    VIDSoft.Vdp2DrawScreens = timedVdp2DrawScreens;
+    VIDSoft.Vdp2DrawEnd = timedVdp2DrawEnd;
 }
 
 void attachPads()
@@ -439,6 +516,7 @@ PASaturnSessionRef PASaturnSessionCreate(const char* bios_path, const char* disc
     }
 
     attachPads();
+    installRendererTimers();
     ScspUnMuteAudio(SCSP_MUTE_SYSTEM);
     ScspSetVolume(100);
     // The app draws its own overlays; keep the core's software OSD out of the
@@ -467,7 +545,9 @@ bool PASaturnSessionRunFrame(PASaturnSessionRef session)
         return false;
     }
     s->frameDirtyThisRun = false;
+    const uint64_t t0 = nowNanos();
     YabauseExec();
+    s->perf.recordFrame(nowNanos() - t0);
     s->emulatedFrames++;
     return s->frameDirtyThisRun;
 }
@@ -590,6 +670,12 @@ void PASaturnSessionGetStats(PASaturnSessionRef session, PASaturnStats* out_stat
     out_stats->renderedFrames = s->renderedFrames;
     out_stats->audioFramesWritten = g_audio.written.load(std::memory_order_relaxed);
     out_stats->audioOverruns = g_audio.overruns.load(std::memory_order_relaxed);
+    out_stats->frameNanosTotal = s->perf.frameNanosTotal;
+    out_stats->frameNanosMax = s->perf.frameNanosMax;
+    out_stats->vdp1Nanos = s->perf.vdp1Nanos;
+    out_stats->vdp2Nanos = s->perf.vdp2Nanos;
+    out_stats->presentNanos = s->perf.presentNanos;
+    out_stats->recentFrameNanosP95 = s->perf.recentP95();
 }
 
 } // extern "C"

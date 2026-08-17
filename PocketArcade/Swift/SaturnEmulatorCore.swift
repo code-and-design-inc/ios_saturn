@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import os
 import UIKit
 
 /// Compile-time gate and the only registry hook for the Sega Saturn core.
@@ -49,10 +50,18 @@ enum SaturnCoreError: LocalizedError {
 /// through `frameHandler`, and audio is pulled from the core's ring buffer
 /// into an AVAudioEngine player. The SH-2 core is the interpreter: no
 /// executable memory is ever requested.
-final class SaturnEmulatorCore: EmulatorCore {
+///
+/// Netplay taps: the core's own RGBA buffer is handed to `streamVideoHandler`
+/// before it is copied for the local display, and the 44.1 kHz int16 ring is
+/// resampled to the session's 48 kHz float format for `streamAudioHandler`.
+final class SaturnEmulatorCore: EmulatorCore, NetplayStreamingCore {
     let system: ConsoleSystem = .saturn
     var frameHandler: ((EmulatorVideoFrame) -> Void)?
     let supportsRewind = false
+    /// Read on the emulation thread inside `runFrame`; assigned from the main
+    /// thread when a session starts or stops (see AresEmulatorCore).
+    var streamVideoHandler: ((UnsafeRawPointer, Int, Int) -> Void)?
+    var streamAudioHandler: ((UnsafePointer<Float>, Int) -> Void)?
 
     private let emulationQueue = DispatchQueue(label: "com.cad.emu.saturn", qos: .userInteractive)
     private var timer: DispatchSourceTimer?
@@ -63,7 +72,12 @@ final class SaturnEmulatorCore: EmulatorCore {
     private let audioEngine = AVAudioEngine()
     private let audioPlayer = AVAudioPlayerNode()
     private lazy var audioFormat = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 2)!
+    private lazy var streamSourceFormat = AVAudioFormat(
+        commonFormat: .pcmFormatInt16, sampleRate: 44_100, channels: 2, interleaved: true
+    )!
     private var audioScratch = [Int16](repeating: 0, count: 4_096 * 2)
+    private let streamAudioTap = NetplayAudioResamplingTap()
+    private let perf = SaturnPerfMonitor()
 
     deinit {
         stop()
@@ -194,6 +208,7 @@ final class SaturnEmulatorCore: EmulatorCore {
 
     private func runFrame() {
         guard let session else { return }
+        let signpost = perf.beginFrame()
         let rendered = PASaturnSessionRunFrame(session)
         if rendered {
             var frame = PASaturnVideoFrame()
@@ -201,6 +216,10 @@ final class SaturnEmulatorCore: EmulatorCore {
                let pixels = frame.pixels, frame.width > 0, frame.height > 0,
                frame.sequence != lastFrameSequence {
                 lastFrameSequence = frame.sequence
+                // Hand the streaming encoder the core's own buffer before
+                // copying for the local display; the pointer is only valid
+                // until the next core call.
+                streamVideoHandler?(UnsafeRawPointer(pixels), Int(frame.width), Int(frame.height))
                 let byteCount = Int(frame.width) * Int(frame.height) * 4
                 let video = EmulatorVideoFrame(
                     width: Int(frame.width),
@@ -211,6 +230,7 @@ final class SaturnEmulatorCore: EmulatorCore {
             }
         }
         pumpAudio(session)
+        perf.endFrame(signpost, session: session)
 
         let now = DispatchTime.now().uptimeNanoseconds
         if now &- lastPersistentSave >= 30_000_000_000 {
@@ -231,14 +251,29 @@ final class SaturnEmulatorCore: EmulatorCore {
 
     private func pumpAudio(_ session: UnsafeMutableRawPointer) {
         // Always drain the ring so a muted session does not accumulate stale
-        // audio that would play back late after unmuting.
+        // audio that would play back late after unmuting, and so a muted host
+        // keeps streaming sound to its guest.
         let available = min(Int(PASaturnSessionAudioAvailable(session)), 4_096)
         guard available > 0 else { return }
         let read = audioScratch.withUnsafeMutableBufferPointer {
             PASaturnSessionReadAudio(session, $0.baseAddress, Int32(available))
         }
         let frames = Int(read)
-        guard frames > 0, audioEngine.isRunning,
+        guard frames > 0 else { return }
+
+        if let streamHandler = streamAudioHandler {
+            audioScratch.withUnsafeBufferPointer { buffer in
+                guard let base = buffer.baseAddress else { return }
+                streamAudioTap.forward(
+                    UnsafeRawPointer(base),
+                    byteCount: frames * 4,
+                    from: streamSourceFormat,
+                    to: streamHandler
+                )
+            }
+        }
+
+        guard audioEngine.isRunning,
               let buffer = AVAudioPCMBuffer(
                   pcmFormat: audioFormat,
                   frameCapacity: AVAudioFrameCount(frames)
@@ -278,6 +313,57 @@ final class SaturnEmulatorCore: EmulatorCore {
             return "unknown"
         }
         return String(cString: message)
+    }
+}
+
+/// Per-frame signposts for Instruments plus a periodic summary line in the
+/// unified log (subsystem com.cad.emu, category SaturnPerf), so device
+/// performance can be read from Xcode's console or Console.app without
+/// attaching a profiler:
+///
+///     saturn perf: emu 60.0 fps | frame avg 8.9 ms p95 11.2 ms max 14.0 ms |
+///     vdp1 2.1 vdp2 3.0 present 0.8 cpu 3.0 ms | audio ring 2205 frames, overruns 0
+///
+/// "cpu" is SH-2 + SCU + SCSP + everything else (frame minus the three
+/// renderer buckets measured inside the bridge).
+final class SaturnPerfMonitor {
+    private let logger = Logger(subsystem: "com.cad.emu", category: "SaturnPerf")
+    private let signposter = OSSignposter(subsystem: "com.cad.emu", category: "SaturnPerf")
+    private let reportInterval: UInt64 = 5_000_000_000
+    private var lastReportTime: UInt64 = 0
+    private var lastStats = PASaturnStats()
+
+    func beginFrame() -> OSSignpostIntervalState? {
+        guard signposter.isEnabled else { return nil }
+        return signposter.beginInterval("SaturnFrame")
+    }
+
+    func endFrame(_ state: OSSignpostIntervalState?, session: UnsafeMutableRawPointer) {
+        if let state { signposter.endInterval("SaturnFrame", state) }
+        let now = DispatchTime.now().uptimeNanoseconds
+        if lastReportTime == 0 {
+            lastReportTime = now
+            PASaturnSessionGetStats(session, &lastStats)
+            return
+        }
+        guard now &- lastReportTime >= reportInterval else { return }
+        var stats = PASaturnStats()
+        PASaturnSessionGetStats(session, &stats)
+        let seconds = Double(now &- lastReportTime) / 1e9
+        let frames = Double(stats.emulatedFrames &- lastStats.emulatedFrames)
+        guard frames > 0 else { lastReportTime = now; lastStats = stats; return }
+        let ms = { (delta: UInt64) -> Double in Double(delta) / frames / 1e6 }
+        let frameMs = ms(stats.frameNanosTotal &- lastStats.frameNanosTotal)
+        let vdp1Ms = ms(stats.vdp1Nanos &- lastStats.vdp1Nanos)
+        let vdp2Ms = ms(stats.vdp2Nanos &- lastStats.vdp2Nanos)
+        let presentMs = ms(stats.presentNanos &- lastStats.presentNanos)
+        let cpuMs = max(0, frameMs - vdp1Ms - vdp2Ms - presentMs)
+        let audioAvailable = PASaturnSessionAudioAvailable(session)
+        logger.notice(
+            "saturn perf: emu \(frames / seconds, format: .fixed(precision: 1)) fps | frame avg \(frameMs, format: .fixed(precision: 1)) ms p95 \(Double(stats.recentFrameNanosP95) / 1e6, format: .fixed(precision: 1)) ms max \(Double(stats.frameNanosMax) / 1e6, format: .fixed(precision: 1)) ms | vdp1 \(vdp1Ms, format: .fixed(precision: 1)) vdp2 \(vdp2Ms, format: .fixed(precision: 1)) present \(presentMs, format: .fixed(precision: 1)) cpu \(cpuMs, format: .fixed(precision: 1)) ms | audio ring \(audioAvailable) frames, overruns \(stats.audioOverruns)"
+        )
+        lastReportTime = now
+        lastStats = stats
     }
 }
 

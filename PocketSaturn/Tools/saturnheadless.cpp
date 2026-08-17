@@ -139,6 +139,13 @@ int main(int argc, char** argv)
            (unsigned long long)audioNonZero,
            (unsigned long long)stats.audioOverruns);
     printf("best non-black ratio %.1f%%\n", bestRatio * 100.0);
+    if (stats.emulatedFrames > 0) {
+        const double f = (double)stats.emulatedFrames;
+        printf("per-frame host cost: avg %.2f ms (p95 %.2f, max %.2f) = vdp1 %.2f + vdp2 %.2f + present %.2f + cpu/scsp %.2f ms\n",
+               stats.frameNanosTotal / f / 1e6, stats.recentFrameNanosP95 / 1e6, stats.frameNanosMax / 1e6,
+               stats.vdp1Nanos / f / 1e6, stats.vdp2Nanos / f / 1e6, stats.presentNanos / f / 1e6,
+               (stats.frameNanosTotal - stats.vdp1Nanos - stats.vdp2Nanos - stats.presentNanos) / f / 1e6);
+    }
 
     if (out && PASaturnSessionGetVideo(session, &frame)) {
         if (writePPM(out, frame)) printf("wrote %s (%dx%d)\n", out, frame.width, frame.height);

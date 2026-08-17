@@ -48,6 +48,17 @@ typedef struct PASaturnStats {
     uint64_t renderedFrames;  // frames the software renderer produced
     uint64_t audioFramesWritten; // stereo frames the SCSP produced
     uint64_t audioOverruns;   // stereo frames dropped because the ring was full
+    // Wall-clock cost, cumulative nanoseconds since the session started; the
+    // caller differentiates over time. frameNanos covers PASaturnSessionRunFrame
+    // as a whole; the three renderer buckets are measured around the software
+    // renderer's entry points, so SH-2/SCU/SCSP time is frame - (vdp1 + vdp2 +
+    // present).
+    uint64_t frameNanosTotal;
+    uint64_t frameNanosMax;
+    uint64_t vdp1Nanos;      // VDP1 command rasterisation
+    uint64_t vdp2Nanos;      // VDP2 layer drawing
+    uint64_t presentNanos;   // per-pixel compositing + frame copy
+    uint64_t recentFrameNanosP95; // p95 of the last 256 frames
 } PASaturnStats;
 
 /// Creates a session and boots the disc. `bios_path` must point at a 512 KiB
